@@ -49,7 +49,7 @@ Current data pulled:
 ![image](https://user-images.githubusercontent.com/16578851/106080931-035b6d00-60e6-11eb-8851-c8c4454230c5.png)
 * 5.2) Enter in this code into the python window 
 6) __Wait while the program finishes executing
-* 6.1) This could take >10 minutes__
+* 6.1) This could take >10 minutes
 7) __Have fun exploring your data!__
 * 7.1) Run this each week to pull the latest data
 
