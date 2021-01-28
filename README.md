@@ -41,13 +41,13 @@ Current data pulled:
 2) __Enter in your consumer key and consumer secret into ./authorization/oauth2yahoo.json__
 * 2.1) Save the json file and close it
 3) __Double click NBAFantasyStats.py__
-* 3.1) This will cause a black window to pop up
+* 3.1) This will cause a window to pop up
 4) __Enter in your league ID__
 * 4.1) This can be found on the homepage URL of your league e.g. https://basketball.fantasysports.yahoo.com/nba/XXXXXX/11__
 5) __If prompted "Enter Verifier : " a new webpage popup looking like this should have appeared:__
 * 5.1)
 ![image](https://user-images.githubusercontent.com/16578851/106080931-035b6d00-60e6-11eb-8851-c8c4454230c5.png)
-* 5.2) Enter in this code into the command temrinal and press enter 
+* 5.2) Enter in this code into the python window 
 6) __Wait while the program finishes executing
 * 6.1) This could take >10 minutes__
 7) __Have fun exploring your data!__
