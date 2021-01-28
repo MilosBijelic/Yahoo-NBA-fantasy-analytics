@@ -83,21 +83,23 @@ class YahooNBAF:
 	
 	# pulls each rostered players total season stats and saves it to: "./rosters/roster_total_stats_2020"
 	def getRosteredPlayersTotalStats(self, roster, roster_size): 
+		team_name = roster['fantasy_content']['team'][0][2]['name']
+		stats = {'team_name': str(team_name), 'players': []}
+
 		for player in range(0, roster_size):
-			team_name = roster['fantasy_content']['team'][0][2]['name']
 			player_key = roster['fantasy_content']['team'][1]['roster']['0']['players'][str(player)]['player'][0][0]['player_key']
 			player_id = roster['fantasy_content']['team'][1]['roster']['0']['players'][str(player)]['player'][0][1]['player_id']
 			player_name = roster['fantasy_content']['team'][1]['roster']['0']['players'][str(player)]['player'][0][2]['name']['full']
 
 			player_stats_url = 'https://fantasysports.yahooapis.com/fantasy/v2/league/'+self.game_key+'.l.'+self.league_id+'/players;player_keys='+self.game_key+'.p.'+player_id+'/stats'
 			player_stats = self.yahooAPI(player_stats_url) 
-			stats = {'team_name': str(team_name), 'players': []}
+			
 			stats['players'].append({"player_name": player_name, "player_id": player_id, "player_stats": player_stats['fantasy_content']['league'][1]['players']['0']['player'][1]['player_stats']['stats']}) 
 			
 			path = './data/teams/'+team_name+'/players_total_stats/'
 			if not os.path.exists(path): 
 				os.makedirs(path)
-			with open('.data/teams/'+team_name+'/players_total_stats/total_stats.json' , 'w') as outfile:
+			with open('./data/teams/'+team_name+'/players_total_stats/'+'total_stats.json' , 'w+') as outfile:
 				json.dump(stats, outfile)
 
 
@@ -109,11 +111,11 @@ class YahooNBAF:
 
 					for team in range(2): # H2H - 2 teams 0 and 1
 						team_name = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][0][2]['name']
-						path = './data/teams/'+team_name+'/weekly_stats/week'+str(week)
+						path = './data/teams/'+team_name+'/team_weekly_stats/week'+str(week)
 						if not os.path.exists(path): 
 							os.makedirs(path)
 						H2H_stats = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][1]['team_stats']['stats']
-						with open('./data/teams/'+team_name+'/weekly_stats/week'+str(week) +'/team_stats.json', 'w') as outfile:
+						with open('./data/teams/'+team_name+'/team_weekly_stats/week'+str(week)+'/'+'team_stats.json', 'w+') as outfile:
 							json.dump(H2H_stats, outfile)
 
 
