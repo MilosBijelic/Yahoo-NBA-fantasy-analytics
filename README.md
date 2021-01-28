@@ -56,5 +56,5 @@ Current data pulled:
 <br/>
 <br/>
 
-Resources and documentation for future development and data that can be extracted from the Yahoo API:
+Resources and documentation for future development and data that can be extracted from Yahoo's developer guide:
 https://developer.yahoo.com/fantasysports/guide/
