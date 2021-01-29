@@ -15,10 +15,10 @@ Current data pulled:
 * Team's weekly stats (week 1 to current week)
 * Each rostered player's total season stats 
 
-# Leauge Details
+# League Details
 * Categories tracked:
-  * feild goals made / attempted
-  * feild goal percentage
+  * field goals made / attempted
+  * field goal percentage
   * free throws made / attempted
   * free throw percentage
   * 3 pointers made
