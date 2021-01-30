@@ -47,10 +47,11 @@ Current data pulled:
 
 * 2.2) Rename the json file to "oauth2yahoo.json"
 
-  3) __Double click NBAFantasyStats.py__
+3) __Double click NBAFantasyStats.py__
 
 * 3.1) This will cause a window to pop up
-  4) __Enter in your league ID__
+  
+4) __Enter in your league ID__
 
 * 4.1) This can be found on the homepage URL of your league. For example: https://basketball.fantasysports.yahoo.com/nba/<LEAGUE_ID>/<TEAM_ID>
 
@@ -60,10 +61,12 @@ Current data pulled:
   ![image](https://user-images.githubusercontent.com/16578851/106080931-035b6d00-60e6-11eb-8851-c8c4454230c5.png)
 
 * 5.2) Enter in this code into the python window 
-  6) __Wait while the program finishes executing__
+  
+6) __Wait while the program finishes executing__
 
 * 6.1) This could take >10 minutes
-  7) __Have fun exploring your data!__
+  
+7) __Have fun exploring your data!__
 
 * 7.1) Run this each week to pull the latest data
 
