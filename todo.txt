@@ -1,0 +1,14 @@
+TO DO: 
+- Create box plot visualization 
+	- Compare weekly team cat vs all other teams scores 
+	- Box Plot 
+	- Normalize data using z-score (0 - 1?) 
+	- y=0 is league mean 
+	- pick python data viz lib 
+
+- Turn the data pulling into a python library? 
+	- See what other Yahoo Fantasy libraries are out there 
+
+- Add more stats to our data pulling 
+	- previous year player stats
+	- 
