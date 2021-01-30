@@ -1,0 +1,8 @@
+NBA Yahoo fantasy
+To get running:
+
+1. pip install yahoo_oauth
+
+
+tasks:
+- find gamekeys for all NBA seasons
