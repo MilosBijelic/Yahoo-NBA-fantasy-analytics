@@ -44,7 +44,8 @@ Current data pulled:
 2) __Enter in your consumer key and consumer secret into ./authorization/oauth2yahoo.json__
 
 * 2.1) Save the json file and close it
-  3) __Double click NBAFantasyStats.py__
+
+3) __Double click NBAFantasyStats.py__
 
 * 3.1) This will cause a window to pop up
 
