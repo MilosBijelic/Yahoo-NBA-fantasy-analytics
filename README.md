@@ -41,9 +41,12 @@ Current data pulled:
 
 * 1.5) You have now successfully created a Yahoo Developer App and you will see App ID, Client ID(Consumer Key), and Client Secret(Consumer Secret) with a long string of random letters and numbers
 
-2) __Enter in your consumer key and consumer secret into ./authorization/oauth2yahoo.json__
+2) __Enter in your consumer key and consumer secret into ./authorization/oauth2yahoo_template.json__
 
 * 2.1) Save the json file and close it
+
+* 2.2) Rename the json file to "oauth2yahoo.json"
+
   3) __Double click NBAFantasyStats.py__
 
 * 3.1) This will cause a window to pop up
