@@ -60,7 +60,7 @@ class YahooNBAF:
 		response = self.getResponse(league_settings_url)
 		stats_list = response['fantasy_content']['league'][1]['settings'][0]['stat_categories']['stats']
 		num_stats = len(stats_list)
-		for i in range(0, num_stats):
+		for i in range(num_stats):
 			stat_id = stats_list[i]['stat']['stat_id']
 			stat_name = stats_list[i]['stat']['display_name']
 			statsLUT[stat_id] = stat_name
@@ -74,11 +74,13 @@ class YahooNBAF:
 
 	# Changes the key name of a dictionary entry 
 	# To be used in replaceStatsIDwithStatName()
-	def renameKey(obj, old_key, new_key): 
-		# creates a new key value pair with the desired key name and contents of the old value
-		obj[new_key] = obj[old_key]
-		# now there is two entries with the same value contents, deletes the entry with the old name
-		del obj[old_key]
+	
+	def renameKey(self, df, old_key, new_key): 
+		df[new_key] = df[old_key]
+		del df[old_key]
+
+		return df
+
 
 	
 	# pulls each rostered players total season stats and saves it to: "./rosters/roster_total_stats_2020"
@@ -86,7 +88,7 @@ class YahooNBAF:
 		team_name = roster['fantasy_content']['team'][0][2]['name']
 		stats = {'team_name': str(team_name), 'players': []}
 
-		for player in range(0, roster_size):
+		for player in range(roster_size):
 			player_key = roster['fantasy_content']['team'][1]['roster']['0']['players'][str(player)]['player'][0][0]['player_key']
 			player_id = roster['fantasy_content']['team'][1]['roster']['0']['players'][str(player)]['player'][0][1]['player_id']
 			player_name = roster['fantasy_content']['team'][1]['roster']['0']['players'][str(player)]['player'][0][2]['name']['full']
@@ -132,8 +134,7 @@ class YahooNBAF:
 			with open('./data/teams/'+team_name+'/'+file_name, 'w') as outfile:
 				json.dump(roster, outfile)
 
-			player_list = roster['fantasy_content']['team'][1]['roster']['0']['players']
-			roster_size = len(player_list)-2
+			roster_size = roster['fantasy_content']['team'][1]['roster']['0']['players']['count']
 
 			# TO DO: 
 			# Commented out because overloads the API with calls and breaks wrapper
