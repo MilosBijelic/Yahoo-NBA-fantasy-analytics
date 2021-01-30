@@ -41,7 +41,7 @@ Current data pulled:
 
 * 1.5) You have now successfully created a Yahoo Developer App and you will see App ID, Client ID(Consumer Key), and Client Secret(Consumer Secret) with a long string of random letters and numbers
 
-  2) __Enter in your consumer key and consumer secret into ./authorization/oauth2yahoo.json__
+2) __Enter in your consumer key and consumer secret into ./authorization/oauth2yahoo.json__
 
 * 2.1) Save the json file and close it
   3) __Double click NBAFantasyStats.py__
@@ -51,7 +51,7 @@ Current data pulled:
 
 * 4.1) This can be found on the homepage URL of your league. For example: https://basketball.fantasysports.yahoo.com/nba/<LEAGUE_ID>/<TEAM_ID>
 
-* 5) __If prompted "Enter Verifier : " a new webpage popup looking like this should have appeared:__
+5) __If prompted "Enter Verifier : " a new webpage popup looking like this should have appeared:__
 
 * 5.1)
   ![image](https://user-images.githubusercontent.com/16578851/106080931-035b6d00-60e6-11eb-8851-c8c4454230c5.png)
