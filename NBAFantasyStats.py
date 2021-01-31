@@ -4,7 +4,8 @@ import pip
 import subprocess
 
 
-# installs all non-core python libraries
+# installs all non-core python libraries required
+# --------------------------------------------------------------------------------------------------   
 def install(package):
     pip.main(['install', package])
 
@@ -27,7 +28,7 @@ missing = required - installed
 if missing:
     python = sys.executable
     subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
-    
+ # --------------------------------------------------------------------------------------------------   
 
 
 from yahoo_oauth import OAuth2
@@ -39,7 +40,7 @@ import time
 class YahooNBAF:
     def __init__(self): 
         # pulls league id from the oauth2yahoo.json file
-        with open('./authorization/oauth2yahoo.json') as json_file:
+        with open('./authorization/authorization_info.json') as json_file:
             data = json.load(json_file)
             self.league_id = data["league_id"]
 
@@ -51,7 +52,7 @@ class YahooNBAF:
 
     # gets response from Yahoo Fantasy API as a JSON object
     def getResponse(self, url): 
-        oauth = OAuth2(None, None, from_file='./authorization/oauth2yahoo.json')
+        oauth = OAuth2(None, None, from_file='./authorization/authorization_info.json')
         if not oauth.token_is_valid():
             oauth.refresh_access_token()
 
