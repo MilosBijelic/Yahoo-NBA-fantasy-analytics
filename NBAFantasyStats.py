@@ -1,8 +1,10 @@
-# install required libraries
+# core python libraries
 import sys
 import pip
 import subprocess
 
+
+# installs all non-core python libraries
 def install(package):
     pip.main(['install', package])
 
@@ -17,7 +19,7 @@ except ModuleNotFoundError:
     print('just installed pkg_resources, please rerun this script at your convenience')
     sys.exit(1)
 
-
+# enter in required libraries here
 required = {'yahoo_oauth'}
 installed = {pkg.key for pkg in pkg_resources.working_set}
 missing = required - installed
@@ -27,6 +29,7 @@ if missing:
     subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
     
 
+
 from yahoo_oauth import OAuth2
 import json
 from json import dumps
@@ -35,7 +38,11 @@ import time
 
 class YahooNBAF:
     def __init__(self): 
-        self.league_id = input("Please enter your league id: ")
+        # pulls league id from the oauth2yahoo.json file
+        with open('./authorization/oauth2yahoo.json') as json_file:
+            data = json.load(json_file)
+            self.league_id = data["league_id"]
+
         self.game_key = self.getGameKey()
         self.num_teams = self.getNumTeams()
         self.current_week = self.getCurrentWeek()
