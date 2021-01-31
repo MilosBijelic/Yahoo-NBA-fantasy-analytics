@@ -43,8 +43,8 @@ Current data pulled:
 
 2) __Update the ./authorization/authorization_info_template.json file__
 
-* 2.1) Enter in your consumer key and consumer secret into authorization_info.json
-* 2.2) Enter in your league_id into authorization_info.json
+* 2.1) Enter in your consumer key and consumer secret into the json file
+* 2.2) Enter in your league_id 
 * 2.3) This can be found on the homepage URL of your league. For example: https://basketball.fantasysports.yahoo.com/nba/<LEAGUE_ID>/<TEAM_ID>
 * 2.4) Save and close authorization_info_template.json
 * 2.5) Rename authorization_info_template.json to authorization_info.json
