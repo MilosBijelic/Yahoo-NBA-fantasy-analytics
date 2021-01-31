@@ -35,13 +35,13 @@ Current data pulled:
 
 * 1.2) Go to https://developer.yahoo.com/ --> 'Apps' --> 'Create a new app'
 
-* 1.3) Name your app whatever you please (i.e. "Fantasy Basketball Stats") in the 'Application Name' block. Add a Description if you would like. You can leave Homepage URL blank. For Redirect URl(s) you can add 'https://localhost:8080'
+* 1.3) Name your app whatever you please (i.e. "Fantasy Basketball Stats") in the 'Application Name' block. Add a Description if you would like. You can leave Homepage URL blank. In Redirect URl(s) add 'https://localhost:8080'
 
 * 1.4) Under the 'API Permissions' sections select 'Fantasy Sports' and then make sure that 'Read' is selected. 'Read/Write' would only be used if you wanted to be able to control your league via Python scripting vice just reading the data from your league. You can come back and change these options in the future
 
 * 1.5) You have now successfully created a Yahoo Developer App and you will see App ID, Client ID(Consumer Key), and Client Secret(Consumer Secret) with a long string of random letters and numbers
 
-2) __Update the ./authorization/authorization_info.json__ json file:__
+2) __Update the ./authorization/authorization_info.json file__
 
 * 2.1) Enter in your consumer key and consumer secret into authorization_info.json
 * 2.2) Enter in your league_id into authorization_info.json
@@ -57,7 +57,7 @@ Current data pulled:
 * 4.1)
   ![image](https://user-images.githubusercontent.com/16578851/106080931-035b6d00-60e6-11eb-8851-c8c4454230c5.png)
 
-* 4.2) Enter in this code into the python window 
+* 4.2) Enter in this code into the python window (enter it manually, copy and paste sometimes errors out)
   
 5) __Wait while the program finishes executing__
 
