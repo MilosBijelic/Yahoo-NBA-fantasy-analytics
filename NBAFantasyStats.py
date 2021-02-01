@@ -36,6 +36,7 @@ from json import dumps
 import os
 import time
 
+
 class YahooNBAF:
     def __init__(self): 
         # pulls league id from the oauth2yahoo.json file
@@ -48,6 +49,7 @@ class YahooNBAF:
         self.num_teams = self.getNumTeams()
         self.current_week = self.getCurrentWeek()
         self.team_num = self.getNumTeams()
+        self.statsLUT = self.createStatsLUT()
 
 
     # gets response from Yahoo Fantasy API as a JSON object
@@ -56,9 +58,9 @@ class YahooNBAF:
         oauth = OAuth2(None, None, from_file=file_path)
         if not oauth.token_is_valid():
             oauth.refresh_access_token()
-
         api_json_response = oauth.session.get(url, params={'format': 'json'})
         time.sleep(1)
+        print(counter)
         return api_json_response.json()
 
 
@@ -105,20 +107,18 @@ class YahooNBAF:
         return statsLUT
 
 
-    # TO DO:
-    # Take a JSON object and replace all instances of stat_id with stat_name using createStatsLUT()
-    def replaceStatIDwithStatName(self): 
-        statsLUT = createStatsLUT(self.league_id, self.game_key)
+    # Creates the json files inside data/team/team_name/team_weekly_stats/weekx 
+    def createTeamWeeklyStatsJSON(self, data_obj, statsLUT): 
+        stats = {}
+        i = 0
+        for entry in statsLUT.items(): 
+            cat_name = str(entry[1])
+            cat_val = str(data_obj[i]['stat']['value'])
+            stats[cat_name] = cat_val
+            i = i+1
+        
+        return stats
 
-    # Changes the key name of a dictionary entry 
-    # To be used in replaceStatsIDwithStatName()
-    
-
-    def renameKey(self, df, old_key, new_key): 
-        df[new_key] = df[old_key]
-        del df[old_key]
-
-        return df
 
     
     def getLeagueInfo(self): 
@@ -161,9 +161,10 @@ class YahooNBAF:
                         path = './data/teams/'+team_name+'/team_weekly_stats/week'+str(week)
                         if not os.path.exists(path): 
                             os.makedirs(path)
-                        H2H_stats = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][1]['team_stats']['stats']
+                        stats_output = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][1]['team_stats']['stats']
+                        weekly_stats = self.createTeamWeeklyStatsJSON(stats_output, self.statsLUT)
                         with open('./data/teams/'+team_name+'/team_weekly_stats/week'+str(week)+'/'+'team_stats.json', 'w+') as outfile:
-                            json.dump(H2H_stats, outfile)
+                            json.dump(weekly_stats, outfile)
 
 
     # Generates all of the league data - roster info, weekly stats, etc. 
