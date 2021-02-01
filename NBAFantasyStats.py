@@ -40,7 +40,7 @@ import pdb
 class YahooNBAF:
     def __init__(self): 
         # pulls league id from the oauth2yahoo.json file
-        path = os.path.abspath('./authorization/authorization_info.json')
+        path = os.getcwd() + '\\authorization\\authorization_info.json'
         with open(path) as json_file:
             data = json.load(json_file)
             self.league_id = data["league_id"]
