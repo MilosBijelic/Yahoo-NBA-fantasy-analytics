@@ -104,6 +104,7 @@ class YahooNBAF:
 
         return statsLUT
 
+
     # TO DO:
     # Take a JSON object and replace all instances of stat_id with stat_name using createStatsLUT()
     def replaceStatIDwithStatName(self): 
@@ -112,14 +113,21 @@ class YahooNBAF:
     # Changes the key name of a dictionary entry 
     # To be used in replaceStatsIDwithStatName()
     
+
     def renameKey(self, df, old_key, new_key): 
         df[new_key] = df[old_key]
         del df[old_key]
 
         return df
 
-
     
+    def getLeagueInfo(self): 
+        league_info_url = 'https://fantasysports.yahooapis.com/fantasy/v2/league/'+self.game_key+'.l.'+self.league_id
+        league_info = self.getResponse(league_info_url)
+        with open('./data/league_info.json', 'w+') as outfile:
+            json.dump(league_info, outfile)
+
+
     # pulls each rostered players total season stats and saves it to: "./rosters/roster_total_stats_2020"
     def getRosteredPlayersTotalStats(self, roster, roster_size): 
         team_name = roster['fantasy_content']['team'][0][2]['name']
@@ -160,6 +168,7 @@ class YahooNBAF:
 
     # Generates all of the league data - roster info, weekly stats, etc. 
     def updateData(self): 
+        self.getLeagueInfo()
         self.getTeamsWeeklyStats()
         
         # pulls each teams roster info and saves it to: "./rosters"
