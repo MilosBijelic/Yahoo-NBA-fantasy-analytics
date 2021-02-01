@@ -3,7 +3,6 @@ import sys
 import pip
 import subprocess
 
-
 # installs all non-core python libraries required
 # --------------------------------------------------------------------------------------------------   
 def install(package):
@@ -36,11 +35,13 @@ import json
 from json import dumps
 import os
 import time
+import pdb
 
 class YahooNBAF:
     def __init__(self): 
         # pulls league id from the oauth2yahoo.json file
-        with open('./authorization/authorization_info.json') as json_file:
+        path = os.path.abspath('./authorization/authorization_info.json')
+        with open(path) as json_file:
             data = json.load(json_file)
             self.league_id = data["league_id"]
 
@@ -52,7 +53,8 @@ class YahooNBAF:
 
     # gets response from Yahoo Fantasy API as a JSON object
     def getResponse(self, url): 
-        oauth = OAuth2(None, None, from_file='./authorization/authorization_info.json')
+        file_path = os.path.abspath('./authorization/authorization_info.json')
+        oauth = OAuth2(None, None, from_file=file_path)
         if not oauth.token_is_valid():
             oauth.refresh_access_token()
 
