@@ -60,7 +60,6 @@ class YahooNBAF:
             oauth.refresh_access_token()
         api_json_response = oauth.session.get(url, params={'format': 'json'})
         time.sleep(1)
-        print(counter)
         return api_json_response.json()
 
 
