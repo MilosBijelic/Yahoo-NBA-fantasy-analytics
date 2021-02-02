@@ -68,6 +68,7 @@ Current data pulled:
 
 * 6.1) Run this each week to pull the latest data
 
+7) __Run the python scripts inside ./visualizations to get some insights on how your team stacks up to the rest of your league__
 <br/>
 <br/>
 
