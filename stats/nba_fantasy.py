@@ -4,6 +4,8 @@ import pip
 import subprocess
 import os
 import time
+import datetime
+import pandas as pd
 
 # installs all non-core python libraries required
 # --------------------------------------------------------------------------------------------------   
@@ -19,7 +21,7 @@ except ModuleNotFoundError:
     sys.exit(1)
 
 # required libraries
-required = {'yahoo_oauth', 'yahoo_fantasy_api', 'tqdm'}
+required = {'yahoo_oauth', 'yahoo_fantasy_api', 'tqdm', 'requests', 'bs4'}
 installed = {pkg.key for pkg in pkg_resources.working_set}
 missing = required - installed
 
@@ -32,7 +34,8 @@ if missing:
 from yahoo_oauth import OAuth2
 import yahoo_fantasy_api as yfa
 import json
-import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 # authorization path - see readme for more details.
@@ -59,8 +62,14 @@ class YahooNBAF:
         # get league info
         self.__league = self.__setLeague()
         
-        # get team info
+        # get  your team info
         self.__team = self.__setTeam()
+        
+        # create a list of every team
+        self.__teams = self.__setAllTeams()
+        
+        # store team details
+        self.__team_details = self.__getTeamDetails()
     
     # private setters
     def __setGame(self):
@@ -76,7 +85,16 @@ class YahooNBAF:
         team = self.__league.to_team(team_key)
         return team
     
+    def __setAllTeams(self):
+        teams_raw = self.__league.teams()
+        teams = {tm: self.__league.to_team(tm) for tm in teams_raw}
+        return teams
+        
+    
     # getters
+    def __getTeamDetails(self):
+        return self.__league.teams()
+    
     def getGameKey(self):
         return self.__game_id
     
@@ -95,14 +113,36 @@ class YahooNBAF:
     def getEndWeek(self):
         return self.__league.end_week()
     
-    def getStandings(self):
+    def getStandings(self):        
         return self.__league.standings()
     
     def getStatCategories(self):
-        return self.__league.stat_categories()
+        stat_categories_raw = self.__league.stat_categories()
+        stat_categories = []
+        for sc in stat_categories_raw:
+            stat_categories.append(sc['display_name'])
+        return stat_categories
     
     def getOwnership(self,player_ids):
         return self.__league.ownership(player_ids)
+    
+    def getMatchup(self, team_key = None, week = None):
+        if week is None:
+            week = self.getCurrentWeek()
+        if team_key is None:
+            temp_team = self.__team
+        else:
+            temp_team = self.__teams[team_key]
+        matchup_opponent_id = temp_team.matchup(week)
+        matchup_opponent_name = self.__team_details[matchup_opponent_id]['name']
+        return {'team_id': matchup_opponent_id, 'team_name':matchup_opponent_name}
+    
+    def getRoster(self,team_key = None, day = None, week = None):
+        if team_key is None:
+            temp_team = self.__team
+        else:
+            temp_team = self.__teams[team_key]
+        return temp_team.roster(week, day)
     
     def getPlayerDetails(self, plyr, stat_map):
         """
@@ -279,7 +319,6 @@ class YahooNBAF:
         df['TO'] = df['TO'].replace('-', '0')
         df['TO'] = df['TO'].astype(int)
         return df
-        
     
     # file dump functions
     def dumpDraftResults(self):
@@ -348,7 +387,7 @@ class YahooNBAF:
     
     def dumpPlayerStats(self, stat_type):
         """
-        Get all player stats for a given season. Note if a player is not active for the 2020 season, they will not appear in prior seasons.
+        Get all player stats for a given season / last month or lat week. Note if a player is not active for the 2020 season, they will not appear in prior seasons.
         """
         # create team map
         stat_map = self.createStaticStatsLUT()
@@ -421,8 +460,188 @@ class YahooNBAF:
         
         return
     
-    # TODO: league results
-    def dumpLeagueStats(self):
+    def getGameLog(self, plyr, taken_players_with_owners, output):
+        """
+        uses beautiful soup and basketballreference.com to get a game log for the player
+        """
+        basic_info = {}
+        basic_info['name'] = plyr['name']
+        basic_info['player_id'] = plyr['player_id']
+        basic_info['percent_owned'] = plyr['percent_owned']
+        basic_info['status'] = plyr['status']
+        basic_info['ownership'] = taken_players_with_owners.get(str(plyr['player_id']),'0')
+        
+        name_exceptions = {'clint capela': 'capelca01', 'kelan martin': 'martike03', 'kenyon martin': 'martike04', 'jamychal green': 'greenja01', 'javonte green':'greenja02',
+                           'jaden mcdaneils': 'mcdanja02', 'jalen mcdaniels': 'mcdanja01', 'jalen smith': 'smithja04', 'jason smith': 'smithja02',
+                           'jerami grant': 'grantje01', 'jerian grant':'grantje02', 'jacob evans':'evansja02', 'jawun evans': 'evansja01',
+                           'dairis bertans':'bertada02','davis bertans':'bertada01', 'bogdan bogdanovic':'bogdabo01', 'bojan bogdanovic':'bogdabo02',
+                           'mikal bridges':'bridgmi01','miles bridges':'bridgmi02', 'marcus morris':'morrima03', 'markeiff morris':'morrima02',
+                           'moe harkless':'harklma01', 'cedi osman':'osmande01', 'guillermo hernangómez': 'hernawi01', 'frank ntilikina':'ntilila01',
+                           'maxi kleber':'klebima01', 'kj martin': 'martike04'}
+        # handle url information
+        first_name = basic_info['name'].lower().split()[0].replace('.','').replace("'",'')
+        last_name = basic_info['name'].lower().split()[1].replace('.','').replace("'",'')
+        player_name = first_name + ' ' + last_name
+        initial = last_name[0]
+        if(len(last_name)>=5):
+            player_id = last_name[0:5] + first_name[0:2]
+        else:
+            player_id = last_name+first_name[0:2]
+        # name exception either for same name individuals or just random exceptions
+        table = None
+        name_repeat=1
+        i = True    
+        if name_exceptions.get(player_name,0):
+            player_id = name_exceptions.get(player_name)
+            name_repeat = int(player_id[-1])
+            player_id = player_id[:-2]
+            
+        for i in range(20):
+            try:
+                url = 'https://www.basketball-reference.com/players/{}/{}0{}/gamelog/2021/'.format(initial, player_id, str(name_repeat))
+                r = requests.get(url)
+                r_html = r.text
+                soup = BeautifulSoup(r_html,'html.parser')
+                table=soup.findAll('table')[7].findAll('tr')
+                break
+            except IndexError:
+                name_repeat +=1
+                pass
+        
+        # drop column names
+        table = table[1:]
+        for i in range(len(table)):
+            game={'stat_type': '', 'MIN': '', 'FGM': '', 'FGA':'', 'FG%': '', '3PTM': '',
+                  '3PTA':'', '3PT%': '', 'FTM': '', 'FT%': '', 'FTA': '', 'PTS':'','TO':'',
+                  'OFFREB':'','DEFREB':'','REB':'','AST':'','ST':'','BLK':'','PF':'','GP':''}
+            reason = None
+            for td in table[i].find_all("td"):
+                if(td['data-stat']=='date_game'):
+                    game['stat_type']=datetime.datetime.strptime(td.text, '%Y-%m-%d')
+                elif(td['data-stat']=='mp'):
+                    minutes = td.text
+                    minutes = minutes.replace(':','.')
+                    game['MIN']=int(float(minutes))
+                elif(td['data-stat']=='fg'):
+                    game['FGM'] = int(td.text)
+                elif(td['data-stat']=='fga'):
+                    game['FGA'] = int(td.text)
+                elif(td['data-stat']=='fg_pct'):
+                    pct = '0'+td.text
+                    game['FG%'] = float(pct)
+                elif(td['data-stat'] == 'fg3'):
+                    game['3PTM'] = int(td.text)
+                elif(td['data-stat'] == 'fg3a'):
+                    game['3PTA'] = int(td.text)
+                elif(td['data-stat']=='fg3_pct'):
+                    pct = '0'+td.text
+                    game['3PT%'] = float(pct)
+                elif(td['data-stat'] == 'ft'):
+                    game['FTM'] = int(td.text)
+                elif(td['data-stat']=='ft_pct'):
+                    pct = '0'+td.text
+                    game['FT%'] = float(pct)
+                elif(td['data-stat'] == 'fta'):
+                    game['FTA'] = int(td.text)
+                elif(td['data-stat'] == 'orb'):
+                    game['OFFREB'] = int(td.text)
+                elif(td['data-stat'] == 'drb'):
+                    game['DEFREB'] = int(td.text)
+                elif(td['data-stat'] == 'trb'):
+                    game['REB'] = int(td.text)
+                elif(td['data-stat'] == 'ast'):
+                    game['AST'] = int(td.text)
+                elif(td['data-stat'] == 'stl'):
+                    game['ST'] = int(td.text)
+                elif(td['data-stat'] == 'blk'):
+                    game['BLK'] = int(td.text)
+                elif(td['data-stat'] == 'tov'):
+                    game['TO'] = int(td.text)
+                elif(td['data-stat'] == 'pts'):
+                    game['PTS'] = int(td.text)
+                elif(td['data-stat'] == 'pf'):
+                    game['PF'] = int(td.text)
+                elif(td['data-stat'] == 'game_season'):
+                    current_player = output[output['name']==basic_info['name']]
+                    current_player_last_game = current_player[current_player['stat_type']==current_player.stat_type.max()]
+                    if current_player_last_game.empty: 
+                        no_games_played=True
+                        current_gp = 0
+                    elif current_player_last_game.GP.values[0] =='-':
+                        no_games_played=True
+                        current_gp = 0
+                    else:
+                        no_games_played = False
+                        current_gp = current_player_last_game.GP.values[0]
+                    if not no_games_played and not td.text =='':
+                        game['GP']= int(td.text) 
+                    elif no_games_played and not td.text=='':
+                        game['GP'] = int(td.text)
+                    else:
+                        game['GP'] = current_gp
+                # check to see if player was active
+                if(td['data-stat'] == 'reason'):
+                    reason = td.text
+            # if no date - scrap it
+            if game['stat_type'] == '':
+                continue
+            
+            elif reason is None and game :
+                game['FGM/A'] = '{}/{}'.format(game['FGM'],game['FGA'])
+                game['FTM/A'] = '{}/{}'.format(game['FTM'],game['FTA'])
+                game = {k:'-' if not v else v for k,v in game.items()}
+            # empty observation
+            else:
+                game['FGM/A'] = '-/-'
+                game['FTM/A'] = '-/-'
+                game = {k:'-' if not v else v for k,v in game.items()}
+            
+            game_summary = {**basic_info, **game} # merge dicts
+            output = output.append(game_summary,ignore_index=True)
+            
+        return output   
+    
+    def dumpDailyPlayerStats(self):
+        """
+        daily stats for all players up until the previous week.
+        to avoid long run time and API rejections from overloading with queries we use BeautifulSoup and basketballreference.com to get a game log for all players.
+        """
+        # get all players
+        taken_players = self.__league.taken_players()
+        taken_player_id_list = [taken_plyr['player_id'] for taken_plyr in taken_players]        
+        taken_players_with_owners = self.getTakenPlayersWithOwners(taken_player_id_list)
+            
+        waiver_players = self.__league.waivers()
+        free_agents = self.__league.free_agents('P') # get all players
+        all_players = taken_players+waiver_players+free_agents          
+
+        # create dataframe
+        stat_columns = self.getAllStats()
+        cols = ['player_id', 'stat_type', 'name','percent_owned','status', 'ownership'] + stat_columns 
+        output = pd.DataFrame(columns=cols)
+
+        # for each week
+        for plyr_index in tqdm(range(len(all_players))):
+            plyr = all_players[plyr_index]
+            output = self.getGameLog(plyr,taken_players_with_owners,output)  
+        # create impact columns
+        output = self.replaceWithZero(output) # convert empty stats to 0
+        output = self.getImpactFG(output)
+        output = self.getImpactFT(output)
+        # write to .csv    
+        outdir = './fantasy_results/'
+        if not os.path.exists(outdir):
+            os.mkdir(outdir)
+        outname = 'player_stats_daily_season_2020.csv'
+        fullname = os.path.join(outdir, outname) 
+        output.to_csv(fullname,index=False)  
+        return
+  
+    # TODO: daily rosters
+    def dumpDailyRosters(self):
+        return
+    # TODO: matchup results
+    def dumpMatchupResults(self):
         return
     
     
@@ -435,26 +654,32 @@ def updateFantasyLeague():
     ######################
     # print some week info
     ######################
-    print("current week: %s", str(my_league.getCurrentWeek()))
+    print("current week: ", str(my_league.getCurrentWeek()))
+    print("league ends on week number: ", str(my_league.getEndWeek()))
     print("league standings: ", my_league.getStandings())
     print("stat categories: ", my_league.getStatCategories())
-    # TODO: matchup against
-    # TODO: your roster
-    # TODO: their roster
+    print("matchup against: ",str(my_league.getMatchup()))
+    print("your current roster: ", my_league.getRoster())
+    print("your opponents roster: ", my_league.getRoster(my_league.getMatchup()['team_id']))
     print("next edit date: ", my_league.getNextEditDate())
     
     #########################################
     # generate files for data vis / analytics
     #########################################
     # draft results
-    my_league.dumpDraftResults()
+    # my_league.dumpDraftResults()
 
     # player stats
-    stat_types = ['season_2020','season_2019', 'lastweek', 'lastmonth]
+    stat_types = ['season_2020','season_2019', 'lastweek', 'lastmonth']  
     for stat_type in stat_types:
-        my_league.dumpPlayerStats('lastmonth')
+        my_league.dumpPlayerStats(stat_type)
     
-    # TODO: league results 
+    # player daily stats: using BeautifulSoup and BasketballReference.com simply because yahoo api sucks and has major query clogs.
+    my_league.dumpDailyPlayerStats()
+
+            
+    
+    # TODO: matchup results and matchup rosters
     # my_league.dumpLeagueResults()
     
     return
