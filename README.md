@@ -1,6 +1,6 @@
 # NBA-fantasy-analytics
 
-Welcome! This is a wrapper I made for the Yahoo Fantasy API. I thought the documentation was a little unintuitive so I made this program to pull all of your relevant Basketball Fantasy Stats.
+Welcome! This is a wrapper we made for the Yahoo Fantasy API. We thought the documentation was a little unintuitive so we made this program to pull all of your relevant Basketball Fantasy Stats.
 
 If you'd like to pull your own custom data you can add this class to your python file and use the code snippet below: 
 ```python 
@@ -10,12 +10,14 @@ YahooAPI = YahooNBAF()
 YahooAPI.getResponse(url) 
 ```
 
-Current data pulled: 
-* Team rosters 
-* Team's weekly stats (week 1 to current week)
-* Each rostered player's total season stats 
+Current data generated: 
+* Draft results
+* Matchup results
+* All teams daily roster 
+* Player stats (current season, last season, last week, last month, current season game log)  
 
 # League Details
+
 * Categories tracked:
   * field goals made / attempted
   * field goal percentage
@@ -49,10 +51,11 @@ Current data pulled:
 * 2.4) Save and close authorization_info_template.json
 * 2.5) Rename authorization_info_template.json to authorization_info.json
 
-3) __Double click NBAFantasyStats.py__
+3) __Go into the data folder and double click generate_nba_fantasy_data.py__
 
 * 3.1) This will cause a window to pop up
   
+
 4) __If prompted "Enter Verifier : " a new webpage popup looking like this should have appeared:__
 
 * 4.1)
@@ -60,10 +63,11 @@ Current data pulled:
 
 * 4.2) Enter in this code into the python window (enter it manually, copy and paste sometimes errors out)
   
+
 5) __Wait while the program finishes executing__
 
-* 5.1) This could take >10 minutes
-  
+* 5.1) This may take a few hours, be patient!
+
 6) __Have fun exploring your data!__
 
 * 6.1) Run this each week to pull the latest data
