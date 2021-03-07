@@ -36,89 +36,160 @@ import numpy as np
 import pdb
 
 
-with open('../data/league_info.json') as f:
-	data = json.load(f)
+class BoxPlotViz: 
+	def __init__(self): 
+		with open('../data/league_info.json') as f:
+			data = json.load(f)
 
-num_teams = data['fantasy_content']['league'][0]['num_teams']
-current_week = data['fantasy_content']['league'][0]['current_week']
-team_list = os.listdir('../data/teams')
+		self.num_teams = data['fantasy_content']['league'][0]['num_teams']
+		self.current_week = data['fantasy_content']['league'][0]['current_week']
+		self.team_list = os.listdir('../data/teams')
 
-my_team = input("Please enter in your team name: ")
-if my_team in team_list: 
-	print("Program running..")
-else:
-	my_team = input("We think you've made a typo, please enter in your team name exactly as is on Yahoo NBA Fantasy: ")
+		self.my_team = input("Please enter in your team name: ") 
+		while self.my_team not in self.team_list: 
+			self.my_team = input("We think you've made a typo, please enter in your team name exactly as is on Yahoo NBA Fantasy: ")
+			if self.my_team in self.team_list: 
+				break 	
 
-
-league_data = {
- "FG%": [], "FGM/A": [], "FT%": [], "FTM/A": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
- }
-
-team_data_json = {
- "FG%": [], "FGM/A": [], "FT%": [], "FTM/A": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
- }
-
-stats_list = ["FG%", "FT%", "3PTM", "PTS", "REB", "AST", "ST", "BLK", "TO"]
-
-for team in team_list:
-	for week in range(1, current_week+1):
-		with open('../data/teams/'+team+'/team_weekly_stats/week'+str(week)+'/team_stats.json') as json_file: 
-			data = json.load(json_file)
-
-			for stat in data.items():
-				# adds every teams 9 cat weeky result to league_data
-				league_data[stat[0]].append(stat[1])
-
-				# adds your teams 9 cat weekly result to team_data
-				if team == my_team: 
-					team_data_json[stat[0]].append(stat[1])
+		self.opp_team = input("Please enter your opponent's team name: ")
+		while self.opp_team not in self.team_list: 
+			self.opp_team = input("We think you've made a typo, please enter in your team name exactly as is on Yahoo NBA Fantasy: ")
+			if self.opp_team in self.team_list: 
+				break
 
 
+	def getTeamStats(self, team_name):
+		team_data_json = {
+		 "FG%": [], "FGM/A": [], "FT%": [], "FTM/A": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
+		 }
 
-league_data = pd.DataFrame.from_dict(league_data)
-league_data.replace('', np.nan, inplace=True)
-league_data.dropna(inplace=True)
-del league_data['FTM/A']
-del league_data['FGM/A']
-league_data = league_data.apply(pd.to_numeric)
+		stats_list = ["FG%", "FT%", "3PTM", "PTS", "REB", "AST", "ST", "BLK", "TO"]
 
-team_data = pd.DataFrame.from_dict(team_data_json)
-team_data.replace('', np.nan, inplace=True)
-team_data.dropna(inplace=True)
-del team_data['FTM/A']
-del team_data['FGM/A']
-del team_data_json['FTM/A']
-del team_data_json['FGM/A']
-team_data = team_data.apply(pd.to_numeric)
-
-cat_league_mean = []
-cat_league_std = []
+		for team in self.team_list:
+			for week in range(1, self.current_week+1):
+				with open('../data/teams/'+team+'/team_weekly_stats/week'+str(week)+'/team_stats.json') as json_file: 
+					data = json.load(json_file)
+						# adds your teams 9 cat weekly result to team_data
+					for stat in data.items():
+						if team == team_name: 
+							team_data_json[stat[0]].append(stat[1])
 
 
-for column in league_data.columns:
-	cat_league_mean.append(league_data[column].mean())
-	cat_league_std.append(league_data[column].std())
+		del team_data_json['FTM/A']
+		del team_data_json['FGM/A']
+		team_data_json = self.cleanData(team_data_json)
+		return team_data_json
 
-team_data_json = {
- "FG%": [], "FT%": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
- }
 
-for row in team_data.iterrows():
-	for index in range(9):
-		z_score = ((row[1][index] - cat_league_mean[index])/cat_league_std[index])
-		team_data_json[stats_list[index]].append(z_score) 
+	def getLeagueDataStats(self):
+		league_data = {
+		 "FG%": [], "FGM/A": [], "FT%": [], "FTM/A": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
+		 }
 
-lst = np.array(team_data_json["TO"])
-lst = -lst
-team_data_json["TO"].clear()
-team_data_json["TO"] = lst 
+		stats_list = ["FG%", "FT%", "3PTM", "PTS", "REB", "AST", "ST", "BLK", "TO"]
 
-team_data = pd.DataFrame.from_dict(team_data_json)
-sns.catplot(data=team_data, kind="box").set(
-	title=my_team + ' Weekly 9-cat Performance',
-	xlabel="Category",
-	ylabel="Z-Score")
+		for team in self.team_list:
+			for week in range(1, self.current_week+1):
+				with open('../data/teams/'+team+'/team_weekly_stats/week'+str(week)+'/team_stats.json') as json_file: 
+					data = json.load(json_file)
 
-print("Enjoy your visualizations!")
-plt.plot([9, 0], [0, 0], linewidth=2, linestyle="--", color="red")
-plt.show()
+					for stat in data.items():
+						# adds every teams 9 cat weeky result to league_data
+						league_data[stat[0]].append(stat[1])
+
+		del league_data['FTM/A']
+		del league_data['FGM/A']
+		league_data = self.cleanData(league_data)
+		return league_data
+
+
+	def getLeagueMeanSD(self, league_dataset):
+		cat_league_mean = []
+		cat_league_SD = []
+		for column in league_dataset.columns:
+			cat_league_mean.append(league_dataset[column].mean())
+			cat_league_SD.append(league_dataset[column].std())
+		return cat_league_mean, cat_league_SD
+
+
+	def cleanData(self, dataset):
+		dataset = pd.DataFrame.from_dict(dataset)
+		dataset.replace('', np.nan, inplace=True)
+		dataset.dropna(inplace=True)
+		dataset = dataset.apply(pd.to_numeric)
+
+		return dataset
+
+	def convertToZScore(self, dataset, mean, SD):
+		team_data_json = {
+		 "FG%": [], "FT%": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
+		 }
+		stats_list = ["FG%", "FT%", "3PTM", "PTS", "REB", "AST", "ST", "BLK", "TO"]
+		for row in dataset.iterrows():
+			for index in range(9):
+				z_score = ((row[1][index] - mean[index])/SD[index])
+				team_data_json[stats_list[index]].append(z_score)
+		
+		team_data_json = pd.DataFrame.from_dict(team_data_json)
+		print(team_data_json)
+		return team_data_json
+
+
+	# The goal of the turnover category is to minimze it so the z scores need to be inverted
+	def fixTurnOvers(self, dataset): 
+		lst = np.array(dataset["TO"])
+		lst = -lst
+		dataset.drop("TO", axis=1)
+		dataset["TO"] = lst 
+
+		return dataset
+
+
+# -----------------------------------------------------------------------------------------------------------------------------------------------#
+
+# TO DO: 
+# put all function calls in a contained class 
+def main():
+	bot = BoxPlotViz()
+	my_team_data = bot.getTeamStats(bot.my_team)
+	opp_team_data = bot.getTeamStats(bot.opp_team)
+
+	league_data = bot.getLeagueDataStats()
+
+	cat_league_mean, cat_league_SD = bot.getLeagueMeanSD(league_data)
+
+	my_team_data = bot.convertToZScore(my_team_data, cat_league_mean, cat_league_SD) 
+	opp_team_data = bot.convertToZScore(opp_team_data, cat_league_mean, cat_league_SD)
+
+	my_team_data = bot.fixTurnOvers(my_team_data)
+	opp_team_data = bot.fixTurnOvers(opp_team_data)
+
+	stats_list = ["FG%", "FT%", "3PTM", "PTS", "REB", "AST", "ST", "BLK", "TO"]
+	viz_data = []
+	
+	for row in my_team_data.iterrows():
+		for index in range(9):
+			viz_data.append([stats_list[index], bot.my_team, row[1][index]])
+	
+	for row in opp_team_data.iterrows():
+		for index in range(9):
+			viz_data.append([stats_list[index], bot.opp_team, row[1][index]])
+
+	viz_data = pd.DataFrame(viz_data, columns = ["Categories", "Team", "Z-Scores"])
+	print(viz_data)
+
+	sns.boxplot(data=viz_data, x='Categories', y='Z-Scores', hue='Team').set(
+		title="This Weeks H2H Matchup")
+	plt.legend(title='Teams', loc='upper left', bbox_to_anchor=(1, 1))
+	
+
+	# sns.catplot(data=viz_data, kind="box").set(
+	# 	title=bot.my_team + ' Weekly 9-cat Performance',
+
+
+	# plt.plot([9, 0], [0, 0], linewidth=2, linestyle="--", color="red")
+	plt.show()
+
+# if this script is executed (double clicked or called in cmd)
+if __name__ == "__main__":
+    main()
