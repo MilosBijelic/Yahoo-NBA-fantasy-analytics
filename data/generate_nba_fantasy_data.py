@@ -90,10 +90,28 @@ class YahooNBAF:
         teams = {tm: self.__league.to_team(tm) for tm in teams_raw}
         return teams
         
-    
     # getters
     def __getTeamDetails(self):
         return self.__league.teams()
+    
+    # refresh token
+    def __refreshToken(self):
+        self.session.refresh_access_token()
+        self.__game = self.__setGame()
+        # get league info
+        self.__league = self.__setLeague()
+        # get  your team info
+        self.__team = self.__setTeam()
+        # create a list of every team
+        self.__teams = self.__setAllTeams()
+        # store team details
+        self.__team_details = self.__getTeamDetails()
+        return
+    
+    # gets response from Yahoo Fantasy API as a JSON object
+    def getResponse(self, url): 
+        api_json_response = self.session.session.get(url, params={'format': 'json'})
+        return api_json_response.json()
     
     def getGameKey(self):
         return self.__game_id
@@ -246,15 +264,7 @@ class YahooNBAF:
         df['IMPACT_FT'] = df.apply(lambda x: ((x['FT%']-P)*attempts(x)),axis=1)
         return df
 
-    # helper functions
-    def createStatsLUT(self):
-        """
-        define a look up table for the stat names. i.e. translate ID(9007006) to ('FG%')
-        """
-        stat_list=self.__league.yhandler.get_settings_raw(self.__league_id)['fantasy_content']['league'][1]['settings'][0]['stat_categories']['stats']
-        statsLUT = {str(stat['stat']['stat_id']): stat['stat']['value'] for stat in stat_list}
-        return statsLUT
-    
+    # helper functions    
     def createStaticStatsLUT(self):
         """
         static stat id to stat for raw player stats.
@@ -264,6 +274,16 @@ class YahooNBAF:
                     '17':'ST', '18': 'BLK', '19':'TO', '21':'PF'}
         return statsLUT
     
+    # Creates the json files inside data/team/team_name/team_weekly_stats/weekx 
+    def formatTeamWeeklyStatsJSON(self, data_obj, statsLUT): 
+        stats = {}
+        for item in data_obj:
+            stat_id = item['stat']['stat_id']
+            stat_category = statsLUT[stat_id]
+            stat_value = item['stat']['value']
+            stats[stat_category]=stat_value        
+        return stats
+    
     def getAllStats(self):
         statsLUT = self.createStaticStatsLUT()
         return list(statsLUT.values())
@@ -272,52 +292,75 @@ class YahooNBAF:
         """
         replaces empty stats with zero. convert stats to proper data type.
         """ 
-        df['GP'] = df['GP'].replace('-','0')
-        df['GP'] = df['GP'].astype(int)
-        df['MIN'] = df['MIN'].replace('-','0')
-        df['MIN'] = df['MIN'].astype(int)
-        df['FGA'] = df['FGA'].replace('-','0')
-        df['FGA'] = df['FGA'].astype(int)
-        df['FGM'] = df['FGM'].replace('-','0')
-        df['FGM'] = df['FGM'].astype(int)
-        df['FTA'] = df['FTA'].replace('-','0')
-        df['FTA'] = df['FTA'].astype(int)
-        df['FTM'] = df['FTM'].replace('-','0')
-        df['FTM'] = df['FTM'].astype(int)  
-        df['3PTA'] = df['3PTA'].replace('-','0')
-        df['3PTA'] = df['3PTA'].astype(int)  
-        df['3PTM'] = df['3PTM'].replace('-','0')
-        df['3PTM'] = df['3PTM'].astype(int)  
-        df['OFFREB'] = df['OFFREB'].replace('-','0')
-        df['OFFREB'] = df['OFFREB'].astype(int)  
-        df['DEFREB'] = df['DEFREB'].replace('-','0')
-        df['DEFREB'] = df['DEFREB'].astype(int) 
-        df['PF'] = df['PF'].replace('-','0')
-        df['PF'] = df['PF'].astype(int) 
-        df['FGM/A'] = df['FGM/A'].replace('-/-', '0/0')
-        df['FGM/A'] = df['FGM/A'].astype(str)
-        df['FG%'] = df['FG%'].replace('-', '0')
-        df['FG%'] = df['FG%'].astype(float)
-        df['FTM/A'] = df['FTM/A'].replace('-/-', '0/0')
-        df['FTM/A'] = df['FTM/A'].astype(str)
-        df['FT%'] = df['FT%'].replace('-', '0')
-        df['FT%'] = df['FT%'].astype(float)
-        df['3PT%'] = df['3PT%'].replace('-', '0')
-        df['3PT%'] = df['3PT%'].astype(float)
-        df['3PTM'] = df['3PTM'].replace('-', '0')
-        df['3PTM'] = df['3PTM'].astype(int)
-        df['PTS'] = df['PTS'].replace('-', '0')
-        df['PTS'] = df['PTS'].astype(int)
-        df['REB'] = df['REB'].replace('-', '0')
-        df['REB'] = df['REB'].astype(int)
-        df['AST'] = df['AST'].replace('-', '0')
-        df['AST'] = df['AST'].astype(int)
-        df['ST'] = df['ST'].replace('-', '0')
-        df['ST'] = df['ST'].astype(int)
-        df['BLK'] = df['BLK'].replace('-', '0')
-        df['BLK'] = df['BLK'].astype(int)
-        df['TO'] = df['TO'].replace('-', '0')
-        df['TO'] = df['TO'].astype(int)
+        if 'GP' in df.columns:
+            df['GP'] = df['GP'].replace('-','0')
+            df['GP'] = df['GP'].astype(int)
+        if 'MIN' in df.columns:
+            df['MIN'] = df['MIN'].replace('-','0')
+            df['MIN'] = df['MIN'].astype(int)
+        if 'FGA' in df.columns:
+            df['FGA'] = df['FGA'].replace('-','0')
+            df['FGA'] = df['FGA'].astype(int)
+        if 'FGM' in df.columns:    
+            df['FGM'] = df['FGM'].replace('-','0')
+            df['FGM'] = df['FGM'].astype(int)
+        if 'FTA' in df.columns:  
+            df['FTA'] = df['FTA'].replace('-','0')
+            df['FTA'] = df['FTA'].astype(int)
+        if 'FTM' in df.columns:  
+            df['FTM'] = df['FTM'].replace('-','0')
+            df['FTM'] = df['FTM'].astype(int)
+        if '3PTA' in df.columns:  
+            df['3PTA'] = df['3PTA'].replace('-','0')
+            df['3PTA'] = df['3PTA'].astype(int)
+        if '3PTM' in df.columns:  
+            df['3PTM'] = df['3PTM'].replace('-','0')
+            df['3PTM'] = df['3PTM'].astype(int)
+        if 'OFFREB' in df.columns:  
+            df['OFFREB'] = df['OFFREB'].replace('-','0')
+            df['OFFREB'] = df['OFFREB'].astype(int)
+        if 'DEFREB' in df.columns:  
+            df['DEFREB'] = df['DEFREB'].replace('-','0')
+            df['DEFREB'] = df['DEFREB'].astype(int)
+        if 'PF' in df.columns:  
+            df['PF'] = df['PF'].replace('-','0')
+            df['PF'] = df['PF'].astype(int)
+        if 'FGM/A' in df.columns:  
+            df['FGM/A'] = df['FGM/A'].replace('-/-', '0/0')
+            df['FGM/A'] = df['FGM/A'].astype(str)
+        if 'FG%' in df.columns:  
+            df['FG%'] = df['FG%'].replace('-', '0')
+            df['FG%'] = df['FG%'].astype(float)
+        if 'FTM/A' in df.columns:  
+            df['FTM/A'] = df['FTM/A'].replace('-/-', '0/0')
+            df['FTM/A'] = df['FTM/A'].astype(str)
+        if 'FT%' in df.columns:  
+            df['FT%'] = df['FT%'].replace('-', '0')
+            df['FT%'] = df['FT%'].astype(float)
+        if '3PT%' in df.columns:  
+            df['3PT%'] = df['3PT%'].replace('-', '0')
+            df['3PT%'] = df['3PT%'].astype(float)
+        if '3PTM' in df.columns:  
+            df['3PTM'] = df['3PTM'].replace('-', '0')
+            df['3PTM'] = df['3PTM'].astype(int)
+        if 'PTS' in df.columns:  
+            df['PTS'] = df['PTS'].replace('-', '0')
+            df['PTS'] = df['PTS'].astype(int)
+        if 'REB' in df.columns:  
+            df['REB'] = df['REB'].replace('-', '0')
+            df['REB'] = df['REB'].astype(int)
+        if 'AST' in df.columns:  
+            df['AST'] = df['AST'].replace('-', '0')
+            df['AST'] = df['AST'].astype(int)
+        if 'ST' in df.columns:  
+            df['ST'] = df['ST'].replace('-', '0')
+            df['ST'] = df['ST'].astype(int)
+        if 'BLK' in df.columns:  
+            df['BLK'] = df['BLK'].replace('-', '0')
+            df['BLK'] = df['BLK'].astype(int)
+        if 'TO' in df.columns:  
+            df['TO'] = df['TO'].replace('-', '0')
+            df['TO'] = df['TO'].astype(int)
         return df
     
     # file dump functions
@@ -325,6 +368,9 @@ class YahooNBAF:
         """
         creates a .csv file with draft results and the respective player stats
         """
+        #refresh token because of time limits
+        self.__refreshToken()
+        
         # create team map
         teams = self.__league.teams()
         game_code = self.__game_id
@@ -343,6 +389,9 @@ class YahooNBAF:
         for dp_index in tqdm(range(len(draft_results))):
             
             dp = draft_results[dp_index]
+
+            if not self.session.token_is_valid():
+                self.__refreshToken()
             
             plyr_details = self.__league.player_details(dp['player_id'])
             
@@ -374,21 +423,23 @@ class YahooNBAF:
         
         # export to .csv
         outname = 'draft_results.csv'
-        
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
-        
         fullname = os.path.join(outdir, outname)    
-        
         output.to_csv(fullname,index=False) 
         
         return
     
+    # TODO: dump season 2019 and season 2020 using basketball reference to save runtime
+    # Only lastweek and lastmonth stats should rely on Yahoo API calls
     def dumpPlayerStats(self, stat_type):
         """
         Get all player stats for a given season / last month or lat week. Note if a player is not active for the 2020 season, they will not appear in prior seasons.
         """
+        #refresh token because of time limits
+        self.__refreshToken()
+        
         # create team map
         stat_map = self.createStaticStatsLUT()
         game_code = self.__game_id
@@ -400,7 +451,8 @@ class YahooNBAF:
             
         waiver_players = self.__league.waivers()
         free_agents = self.__league.free_agents('P') # get all players
-        all_players = taken_players+waiver_players+free_agents          
+        all_players = taken_players+waiver_players+free_agents   
+        time.sleep(60)       
 
         # create dataframe
         stat_columns = self.getAllStats()
@@ -408,10 +460,11 @@ class YahooNBAF:
         output = pd.DataFrame(columns=cols) 
         
         total_count = 0
-        print("getting stats for %s" %stat_type)
         for plyr_index in tqdm(range(len(all_players))):
+            if not self.session.token_is_valid():
+                self.__refreshToken()
             plyr = all_players[plyr_index]
-            print('player %d out of %d ' %(total_count, len(all_players)))
+            #print('player %d out of %d ' %(total_count, len(all_players)))
             basic_info = {}
             basic_info['player_id'] = plyr['player_id']
             basic_info['stat_type'] = stat_type
@@ -449,13 +502,10 @@ class YahooNBAF:
         
         # export to .csv
         outname = 'player_stats_' + stat_type + '.csv'
-        
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
-        
         fullname = os.path.join(outdir, outname)    
-        
         output.to_csv(fullname,index=False)             
         
         return
@@ -606,6 +656,12 @@ class YahooNBAF:
         daily stats for all players up until the previous week.
         to avoid long run time and API rejections from overloading with queries we use BeautifulSoup and basketballreference.com to get a game log for all players.
         """
+        #refresh token because of time limits
+        self.__refreshToken()
+
+        # to avoid YAHOO request rejection
+        time.sleep(120)
+        
         # get all players
         taken_players = self.__league.taken_players()
         taken_player_id_list = [taken_plyr['player_id'] for taken_plyr in taken_players]        
@@ -637,14 +693,126 @@ class YahooNBAF:
         output.to_csv(fullname,index=False)  
         return
   
-    # TODO: daily rosters
     def dumpDailyRosters(self):
+        """
+        goes through each day and writes the roster for each team. Goes up until the last week.
+        """
+        #refresh token because of time limits
+        self.__refreshToken()
+        
+        # get daily rosters up to last week
+        last_week = self.__league.current_week() - 1
+        
+        # get list of team ids
+        team_id_list = list(self.__teams.keys())
+        # map team id to team name
+        team_id_map = {tid: self.__team_details[tid]['name'] for tid in team_id_list}
+
+        # create dataframe
+        cols = ['team_id', 'team_name', 'week','start_date', 'end_date', 'current_date', 'roster_ids', 'roster_names', 'selected_positions'] 
+        output = pd.DataFrame(columns=cols)
+        
+        # loop through each day and get rosters for each team
+        delta = datetime.timedelta(days=1)
+        for index in tqdm(range(len(team_id_list))):
+            team_id=team_id_list[index]
+            info = {}
+            info['team_id'] = team_id
+            info['team_name'] = team_id_map[team_id]
+            for week in range(last_week):
+                week_date_range = self.__league.week_date_range(week + 1)
+                start_date = week_date_range[0]
+                end_date = week_date_range[1]
+                info['week']  = week + 1
+                info['start_date'] = start_date
+                info['end_date'] = end_date
+                while start_date <= end_date:
+                    if not self.session.token_is_valid():
+                        self.__refreshToken()
+                    info['current_date'] = start_date
+                    roster = self.__teams[team_id].roster(day=start_date)
+                    # get list of roster ids
+                    roster_ids = [plyr['player_id'] for plyr in roster]
+                    # get list of roster names
+                    roster_names = [plyr['name'] for plyr in roster]
+                    # get selected position for each plyr
+                    selected_positions = {plyr['player_id']: plyr['selected_position'] for plyr in roster}
+                    # write to output
+                    info['roster_ids'] = roster_ids
+                    info['roster_names'] = roster_names
+                    info['selected_positions'] = selected_positions
+                    output = output.append(info, ignore_index=True)
+                    # increment date
+                    start_date+=delta
+                time.sleep(10)
+        # write to .csv    
+        outdir = './fantasy_results/'
+        if not os.path.exists(outdir):
+            os.mkdir(outdir)
+        outname = 'league_daily_rosters.csv'
+        fullname = os.path.join(outdir, outname) 
+        output.to_csv(fullname,index=False)  
         return
-    # TODO: matchup results
+    
     def dumpMatchupResults(self):
-        return
-    
-    
+        #refresh token because of time limits
+        self.__refreshToken()
+        
+        # get daily rosters up to last week
+        last_week = self.__league.current_week() - 1
+        num_teams = self.__league.settings()['num_teams']
+        
+        # create dataframe
+        stat_columns = self.getStatCategories()
+        cols = ['week', 'team_id', 'team_name', 'opponent_id', 'opponent_name'] + stat_columns 
+        output = pd.DataFrame(columns=cols)
+        
+        for week in tqdm(range(last_week)):
+            # get scoreboard for week
+            url = 'https://fantasysports.yahooapis.com/fantasy/v2/league/'+self.__league_id+'/scoreboard;week='+str(week + 1)
+            stats = self.getResponse(url)
+            info = {}
+            info['week'] = week + 1
+            for matchup in range(int(num_teams/2)): # 0-5 (6 matchups, 12 teams)
+                for team in range(2):
+                    if not self.session.token_is_valid():
+                        self.__refreshToken()
+                    info['team_id'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][0][0]['team_key']
+                    info['team_name'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][0][2]['name']
+                    # get opponent
+                    if team==0:
+                        info['opponent_id'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['1']['team'][0][0]['team_key']
+                        info['opponent_name'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['1']['team'][0][2]['name']
+                    else:
+                        info['opponent_id'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['0']['team'][0][0]['team_key']
+                        info['opponent_name'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['0']['team'][0][2]['name']
+                    team_stats = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][1]['team_stats']['stats']
+                    team_stats = self.formatTeamWeeklyStatsJSON(team_stats, self.createStaticStatsLUT())
+                    #merge dicts
+                    results = {**info, **team_stats}
+                    #write to csv
+                    output = output.append(results,ignore_index=True)
+        
+        output = self.replaceWithZero(output) # convert empty stats to 0
+        # write to .csv    
+        outdir = './fantasy_results/'
+        if not os.path.exists(outdir):
+            os.mkdir(outdir)
+        outname = 'league_matchup_results.csv'
+        fullname = os.path.join(outdir, outname) 
+        output.to_csv(fullname,index=False)          
+        return  
+
+def printWeekInfo(my_league):
+    print("current week: ", str(my_league.getCurrentWeek()))
+    print("league ends on week number: ", str(my_league.getEndWeek()))
+    print("league standings: ", my_league.getStandings())
+    print("stat categories: ", my_league.getStatCategories())
+    print("matchup against: ",str(my_league.getMatchup()))
+    print("your current roster: ", my_league.getRoster())
+    print("your opponents roster: ", my_league.getRoster(my_league.getMatchup()['team_id']))
+    print("next edit date: ", my_league.getNextEditDate())
+    return
     
 # update output files for league
 def updateFantasyLeague():
@@ -654,40 +822,36 @@ def updateFantasyLeague():
     ######################
     # print some week info
     ######################
-    print("current week: ", str(my_league.getCurrentWeek()))
-    print("league ends on week number: ", str(my_league.getEndWeek()))
-    print("league standings: ", my_league.getStandings())
-    print("stat categories: ", my_league.getStatCategories())
-    print("matchup against: ",str(my_league.getMatchup()))
-    print("your current roster: ", my_league.getRoster())
-    print("your opponents roster: ", my_league.getRoster(my_league.getMatchup()['team_id']))
-    print("next edit date: ", my_league.getNextEditDate())
+    # printWeekInfo(my_league)
     
     #########################################
     # generate files for data vis / analytics
     #########################################
-    # draft results
-    # my_league.dumpDraftResults()
-
     # player stats
     stat_types = ['season_2020','season_2019', 'lastweek', 'lastmonth']  
     for stat_type in stat_types:
+        print("generating player stats for: ", stat_type)
         my_league.dumpPlayerStats(stat_type)
     
     # player daily stats: using BeautifulSoup and BasketballReference.com simply because yahoo api sucks and has major query clogs.
+    print("generating game log for each player this season")
     my_league.dumpDailyPlayerStats()
 
-            
+    # draft results
+    print("generating draft results")
+    my_league.dumpDraftResults()
     
-    # TODO: matchup results and matchup rosters
-    # my_league.dumpLeagueResults()
+    # matchup results and daily rosters
+    print("generating matchup and daily rosters")
+    my_league.dumpMatchupResults()
+    my_league.dumpDailyRosters()
     
+    #done
+    print("All done, trust the statistics!")
     return
-
 
 def main():
     updateFantasyLeague()
-
 
 # if this script is executed (double clicked or called in cmd)
 if __name__ == "__main__":
