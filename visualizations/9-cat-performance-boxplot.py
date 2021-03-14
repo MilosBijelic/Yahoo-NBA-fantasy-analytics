@@ -45,6 +45,7 @@ class BoxPlotViz:
 		self.current_week = data['fantasy_content']['league'][0]['current_week']
 		self.team_list = os.listdir('../data/teams')
 
+		# Takes in the name of your team and your weekly opponent
 		self.my_team = input("Please enter in your team name: ") 
 		while self.my_team not in self.team_list: 
 			self.my_team = input("We think you've made a typo, please enter in your team name exactly as is on Yahoo NBA Fantasy: ")
@@ -57,7 +58,7 @@ class BoxPlotViz:
 			if self.opp_team in self.team_list: 
 				break
 
-
+	# pulls a team's 9-cat performance from week 1 to current week 
 	def getTeamStats(self, team_name):
 		team_data_json = {
 		 "FG%": [], "FGM/A": [], "FT%": [], "FTM/A": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
@@ -69,18 +70,23 @@ class BoxPlotViz:
 			for week in range(1, self.current_week+1):
 				with open('../data/teams/'+team+'/team_weekly_stats/week'+str(week)+'/team_stats.json') as json_file: 
 					data = json.load(json_file)
-						# adds your teams 9 cat weekly result to team_data
+					# adds your teams 9 cat weekly result to team_data_json
 					for stat in data.items():
 						if team == team_name: 
+							#stat[0] is cat name, stat[1] is value
 							team_data_json[stat[0]].append(stat[1])
 
-
+		# deletes columns not in use for viz
 		del team_data_json['FTM/A']
 		del team_data_json['FGM/A']
+		# removes blank values - if script is run Monday morning (beginning of week before any games)
+		# will get populated with blanks in current week
 		team_data_json = self.cleanData(team_data_json)
 		return team_data_json
 
 
+	# pulls every 9-cat value 
+	# e.g. week 10, 12 teams = 120 different FG%/PTS/RBS etc. values 
 	def getLeagueDataStats(self):
 		league_data = {
 		 "FG%": [], "FGM/A": [], "FT%": [], "FTM/A": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
@@ -94,15 +100,19 @@ class BoxPlotViz:
 					data = json.load(json_file)
 
 					for stat in data.items():
-						# adds every teams 9 cat weeky result to league_data
+						#stat[0] is cat name, stat[1] is value
 						league_data[stat[0]].append(stat[1])
-
+		
+		# deletes columns not in use for viz
 		del league_data['FTM/A']
 		del league_data['FGM/A']
+		# removes blank values - if script is run Monday morning (beginning of week before any games)
+		# will get populated with blanks in current week
 		league_data = self.cleanData(league_data)
 		return league_data
 
 
+	# calculates the mean and std dev of each category across the league
 	def getLeagueMeanSD(self, league_dataset):
 		cat_league_mean = []
 		cat_league_SD = []
@@ -111,7 +121,8 @@ class BoxPlotViz:
 			cat_league_SD.append(league_dataset[column].std())
 		return cat_league_mean, cat_league_SD
 
-
+	# removes any blank values 
+	# these occur if script is run early in week before any games have happened
 	def cleanData(self, dataset):
 		dataset = pd.DataFrame.from_dict(dataset)
 		dataset.replace('', np.nan, inplace=True)
@@ -120,6 +131,7 @@ class BoxPlotViz:
 
 		return dataset
 
+	# Converts each cat value to z-score: (val-mean)/SD
 	def convertToZScore(self, dataset, mean, SD):
 		team_data_json = {
 		 "FG%": [], "FT%": [], "3PTM": [], "PTS": [], "REB": [], "AST": [], "ST": [], "BLK": [], "TO": []
@@ -131,7 +143,6 @@ class BoxPlotViz:
 				team_data_json[stats_list[index]].append(z_score)
 		
 		team_data_json = pd.DataFrame.from_dict(team_data_json)
-		print(team_data_json)
 		return team_data_json
 
 
@@ -164,6 +175,14 @@ def main():
 	my_team_data = bot.fixTurnOvers(my_team_data)
 	opp_team_data = bot.fixTurnOvers(opp_team_data)
 
+	
+	# converts the data fram to Category, Team, Value:
+	# Cat  Team           Val
+	# PTS  Milos's Team   654
+	# RBS  Milos's Team   109
+	# AST  Opponent Team  144 
+	# ...... 
+	#Cat is x, Val is y, Team is the sort variable
 	stats_list = ["FG%", "FT%", "3PTM", "PTS", "REB", "AST", "ST", "BLK", "TO"]
 	viz_data = []
 	
@@ -176,18 +195,11 @@ def main():
 			viz_data.append([stats_list[index], bot.opp_team, row[1][index]])
 
 	viz_data = pd.DataFrame(viz_data, columns = ["Categories", "Team", "Z-Scores"])
-	print(viz_data)
+
 
 	sns.boxplot(data=viz_data, x='Categories', y='Z-Scores', hue='Team').set(
 		title="This Weeks H2H Matchup")
 	plt.legend(title='Teams', loc='upper left', bbox_to_anchor=(1, 1))
-	
-
-	# sns.catplot(data=viz_data, kind="box").set(
-	# 	title=bot.my_team + ' Weekly 9-cat Performance',
-
-
-	# plt.plot([9, 0], [0, 0], linewidth=2, linestyle="--", color="red")
 	plt.show()
 
 # if this script is executed (double clicked or called in cmd)
