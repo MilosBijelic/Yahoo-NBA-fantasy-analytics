@@ -134,6 +134,12 @@ class YahooNBAF:
     def getStandings(self):        
         return self.__league.standings()
     
+    def getTeamName(self):
+        return self.__team_details[self.__league.team_key()]['name']
+    
+    def getTeamNameWithID(self,team_key):
+        return self.__team_details[team_key]['name']
+    
     def getStatCategories(self):
         stat_categories_raw = self.__league.stat_categories()
         stat_categories = []
@@ -422,7 +428,8 @@ class YahooNBAF:
         output = self.getImpactFT(output)
         
         # export to .csv
-        outname = 'draft_results.csv'
+        timestr = time.strftime("%Y%m%d")
+        outname = 'draft_results_' + timestr + '.csv'
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
@@ -501,7 +508,8 @@ class YahooNBAF:
         output = self.getImpactFT(output)
         
         # export to .csv
-        outname = 'player_stats_' + stat_type + '.csv'
+        timestr = time.strftime("%Y%m%d")
+        outname = 'player_stats_' + stat_type + '_' + timestr + '.csv'
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
@@ -559,6 +567,10 @@ class YahooNBAF:
                 pass
         
         # drop column names
+        if table is None:
+            print("ERROR: check player on basketball reference %s" %plyr['name'])            
+            sys.exit()
+        
         table = table[1:]
         for i in range(len(table)):
             game={'stat_type': '', 'MIN': '', 'FGM': '', 'FGA':'', 'FG%': '', '3PTM': '',
@@ -688,7 +700,8 @@ class YahooNBAF:
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
-        outname = 'player_stats_daily_season_2020.csv'
+        timestr = time.strftime("%Y%m%d")
+        outname = 'player_stats_daily_season_' + timestr + '.csv'
         fullname = os.path.join(outdir, outname) 
         output.to_csv(fullname,index=False)  
         return
@@ -749,7 +762,8 @@ class YahooNBAF:
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
-        outname = 'league_daily_rosters.csv'
+        timestr = time.strftime("%Y%m%d")
+        outname = 'league_daily_rosters_' + timestr + '.csv'
         fullname = os.path.join(outdir, outname) 
         output.to_csv(fullname,index=False)  
         return
@@ -798,7 +812,8 @@ class YahooNBAF:
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
-        outname = 'league_matchup_results.csv'
+        timestr = time.strftime("%Y%m%d")
+        outname = 'league_matchup_results_' + timestr + '.csv'
         fullname = os.path.join(outdir, outname) 
         output.to_csv(fullname,index=False)          
         return  
@@ -829,22 +844,36 @@ def updateFantasyLeague():
     #########################################
     # player stats
     stat_types = ['season_2020','season_2019', 'lastweek', 'lastmonth']  
+    timestr = time.strftime("%Y%m%d")
     for stat_type in stat_types:
-        print("generating player stats for: ", stat_type)
-        my_league.dumpPlayerStats(stat_type)
+        outname = 'player_stats_' + stat_type + '_' + timestr + '.csv'
+        if not os.path.exists(outname):
+            print("generating player stats for: ", stat_type)
+            my_league.dumpPlayerStats(stat_type)
     
     # player daily stats: using BeautifulSoup and BasketballReference.com simply because yahoo api sucks and has major query clogs.
-    print("generating game log for each player this season")
-    my_league.dumpDailyPlayerStats()
+    outname = 'player_stats_daily_season_' + timestr + '.csv'
+    if not os.path.exists(outname):
+        print("generating game log for each player this season")    
+        my_league.dumpDailyPlayerStats()
 
     # draft results
-    print("generating draft results")
-    my_league.dumpDraftResults()
+    outname = 'draft_results_' + timestr + '.csv'
+    if not os.path.exists(outname):
+        print("generating draft results")
+        my_league.dumpDraftResults()
     
-    # matchup results and daily rosters
-    print("generating matchup and daily rosters")
-    my_league.dumpMatchupResults()
-    my_league.dumpDailyRosters()
+    # matchup results 
+    outname = 'league_matchup_results_' + timestr + '.csv'
+    if not os.path.exists(outname):
+        print("generating matchup results")
+        my_league.dumpMatchupResults()
+    
+    # daily rosters    
+    outname = 'league_daily_rosters_' + timestr + '.csv'
+    if not os.path.exists(outname):
+        print("generating daily rosters")
+        my_league.dumpDailyRosters()
     
     #done
     print("All done, trust the statistics!")
@@ -852,6 +881,7 @@ def updateFantasyLeague():
 
 def main():
     updateFantasyLeague()
+    return
 
 # if this script is executed (double clicked or called in cmd)
 if __name__ == "__main__":
