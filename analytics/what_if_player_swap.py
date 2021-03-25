@@ -49,13 +49,13 @@ def load_matchup_result(yahoo_league: YahooNBAF, matchup_results: pd.DataFrame()
 
     # get team output
     mr_team = matchup_results[matchup_results['team_name'] == team_name]
-#    mr_team = matchup_results[matchup_results['team_id'] == "402.l.42709.t.1"]
+#    mr_team = matchup_results[matchup_results['team_id'] == "402.l.42709.t.7"]
     
     mr_team = mr_team[col_names]
     
     # get opponents output
     opp_team = matchup_results[matchup_results['opponent_name'] == team_name]
-#    opp_team = matchup_results[matchup_results['opponent_id'] == "402.l.42709.t.1"]
+#    opp_team = matchup_results[matchup_results['opponent_id'] == "402.l.42709.t.7"]
 
     opp_team = opp_team[col_names]
 
@@ -165,7 +165,7 @@ def print_results(results):
         print("WINS: %d" %(wins))
         print("LOSSES: %d" %(losses))
         print("TIES: %d" %(ties))
-        print("AVERAGE CAT DIFF: %f \n STANDARD DEVIATION DIFF: %f" %(average,stdev))
+        print("AVERAGE CAT DIFF: %f \nSTANDARD DEVIATION DIFF: %f" %(average,stdev))
         ovr_win += wins
         ovr_loss += losses
         ovr_tie += ties
@@ -225,13 +225,13 @@ def what_if_player_swap(my_league,mr,dr,gl,cur_plyr,new_plyr):
             FTM_FTA = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FTM/A'].values[0].split('/')
             FTM = int(FTM_FTA[0])
             FTA = int(FTM_FTA[1])
-            PTS = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'].item()
-            PTM_3 = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'].item()
-            REB = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'].item()
-            AST = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'].item()
-            ST = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'].item()
-            BLK = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'].item()
-            TO = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'].item()
+            PTS = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'].iloc[0]
+            PTM_3 = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'].iloc[0]
+            REB = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'].iloc[0]
+            AST = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'].iloc[0]
+            ST = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'].iloc[0]
+            BLK = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'].iloc[0]
+            TO = mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'].iloc[0]
             
             if(roster.get(cur_plyr,0)):             
                 # if cur plyr has played subtract stats from roster
@@ -241,15 +241,24 @@ def what_if_player_swap(my_league,mr,dr,gl,cur_plyr,new_plyr):
                     cur_stats = gl[(gl['stat_type']==start_date_str) & (gl['player_id']==cur_plyr)]
                     # subtract current player stats from matchup results
 #                    print("MR BEFORE SUBTRACTING CURRENT PLAYER: ")
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])
 #                    print(cur_stats)
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 - cur_stats['3PTM'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS - cur_stats['PTS'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO - cur_stats['TO'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB - cur_stats['REB'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST - cur_stats['AST'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK - cur_stats['BLK'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST - cur_stats['ST'].iloc[0]
+                    
+                    PTM_3 -= cur_stats['3PTM'].iloc[0]
+                    PTS -= cur_stats['PTS'].iloc[0]
+                    TO -= cur_stats['TO'].iloc[0]
+                    REB -= cur_stats['REB'].iloc[0]
+                    AST -= cur_stats['AST'].iloc[0]
+                    BLK -= cur_stats['BLK'].iloc[0]
+                    ST -= cur_stats['ST'].iloc[0]
+                    
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST 
                     FGA -= cur_stats['FGA'].iloc[0]
                     FGM -= cur_stats['FGM'].iloc[0]
                     FTA -= cur_stats['FTA'].iloc[0]
@@ -259,33 +268,41 @@ def what_if_player_swap(my_league,mr,dr,gl,cur_plyr,new_plyr):
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FGM/A'] = '{}/{}'.format(FGM,FGA)
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FTM/A'] = '{}/{}'.format(FTM,FTA)
 #                    print("MR AFTER SUBTRACTING CURRENT PLAYER: ")
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])
                     
                 # if new plyr has played add their stats to roster
                 if(new_plyr_has_game):
 #                    print("MR BEFORE ADDING NEW PLAYER: ")
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])
                     # add new player stats from matchup results
                     new_stats = gl[(gl['stat_type']==start_date_str) & (gl['player_id']==new_plyr)]
 #                    print(new_stats)
                     # subtract current player stats from matchup results
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 + new_stats['3PTM'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS + new_stats['PTS'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO + new_stats['TO'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB + new_stats['REB'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST + new_stats['AST'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK + new_stats['BLK'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST + new_stats['ST'].iloc[0]
+                    PTM_3 += new_stats['3PTM'].iloc[0]
+                    PTS += new_stats['PTS'].iloc[0]
+                    TO += new_stats['TO'].iloc[0]
+                    REB += new_stats['REB'].iloc[0]
+                    AST += new_stats['AST'].iloc[0]
+                    BLK += new_stats['BLK'].iloc[0]
+                    ST += new_stats['ST'].iloc[0]
+
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST  
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK  
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST  
                     FGA += new_stats['FGA'].iloc[0]
                     FGM += new_stats['FGM'].iloc[0]
                     FTA += new_stats['FTA'].iloc[0]
                     FTM += new_stats['FTM'].iloc[0]
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FT%'] = float(FTM/FTA)
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FT%'] = float(FGM/FGA)
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FG%'] = float(FGM/FGA)
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FGM/A'] = '{}/{}'.format(FGM,FGA)
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FTM/A'] = '{}/{}'.format(FTM,FTA)
 #                    print("MR AFTER ADDING NEW PLAYER: ")
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])
                     
             # check to see if new_plyr is in the roster instead
             elif(roster.get(new_plyr,0)):
@@ -294,53 +311,69 @@ def what_if_player_swap(my_league,mr,dr,gl,cur_plyr,new_plyr):
                 if((position != 'BN') and (position != 'IL') and new_plyr_has_game):
 #                    print("MR BEFORE SUBTRACTING NEW PLAYER: ")
                     
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])                    
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])                    
                     new_stats = gl[(gl['stat_type']==start_date_str) & (gl['player_id']==new_plyr)]
 #                    print(new_stats)
                     # subtract new player stats from matchup results
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 - new_stats['3PTM'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS - new_stats['PTS'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO - new_stats['TO'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB - new_stats['REB'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST - new_stats['AST'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK - new_stats['BLK'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST - new_stats['ST'].iloc[0]
+                    PTM_3 -= new_stats['3PTM'].iloc[0]
+                    PTS -= new_stats['PTS'].iloc[0]
+                    TO -= new_stats['TO'].iloc[0]
+                    REB -= new_stats['REB'].iloc[0]
+                    AST -= new_stats['AST'].iloc[0]
+                    BLK -= new_stats['BLK'].iloc[0]
+                    ST -= new_stats['ST'].iloc[0]
+                    
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST 
                     FGA -= new_stats['FGA'].iloc[0]
                     FGM -= new_stats['FGM'].iloc[0]
                     FTA -= new_stats['FTA'].iloc[0]
                     FTM -= new_stats['FTM'].iloc[0]
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FT%'] = float(FTM/FTA)
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FT%'] = float(FGM/FGA)
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FG%'] = float(FGM/FGA)
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FGM/A'] = '{}/{}'.format(FGM,FGA)
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FTM/A'] = '{}/{}'.format(FTM,FTA)
 #                    print("MR AFTER  SUBTRACTING NEW PLAYER: ")
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])  
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])  
                 # if new plyr has played add their stats to roster
                 if(cur_plyr_has_game):
                     # add new player stats from matchup results
                     cur_stats = gl[(gl['stat_type']==start_date_str) & (gl['player_id']==cur_plyr)]
 #                    print("MR BEFORE ADDING CUR PLAYER: ")
-#                    
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])  
+                    
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])  
 #                    print(cur_stats)
-                    # subtract current player stats from matchup results
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 + cur_stats['3PTM'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS + cur_stats['PTS'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO + cur_stats['TO'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB + cur_stats['REB'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST + cur_stats['AST'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK + cur_stats['BLK'].iloc[0]
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST + cur_stats['ST'].iloc[0]
+                    # add current player stats from matchup results
+                    PTM_3 += cur_stats['3PTM'].iloc[0]
+                    PTS += cur_stats['PTS'].iloc[0]
+                    TO += cur_stats['TO'].iloc[0]
+                    REB += cur_stats['REB'].iloc[0]
+                    AST += cur_stats['AST'].iloc[0]
+                    BLK += cur_stats['BLK'].iloc[0]
+                    ST += cur_stats['ST'].iloc[0]
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), '3PTM'] = PTM_3 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'PTS'] = PTS 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'TO'] = TO 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'REB'] = REB 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'AST'] = AST 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'BLK'] = BLK 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'ST'] = ST 
                     FGA += cur_stats['FGA'].iloc[0]
                     FGM += cur_stats['FGM'].iloc[0]
                     FTA += cur_stats['FTA'].iloc[0]
                     FTM += cur_stats['FTM'].iloc[0]
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FT%'] = float(FTM/FTA)
-                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FT%'] = float(FGM/FGA) 
+                    mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FG%'] = float(FGM/FGA) 
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FGM/A'] = '{}/{}'.format(FGM,FGA)
                     mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week), 'FTM/A'] = '{}/{}'.format(FTM,FTA)
 #                    print("MR AFTER ADDING CUR PLAYER: ")
-#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)])  
+#                    print(mr_new.loc[(mr_new['team_id']==team_id) & (mr_new['week']==week)]['AST'])  
+
         start_date+=delta
         start_date_str = '{:%Y-%m-%d}'.format(start_date)
         
@@ -351,8 +384,8 @@ def main():
     
     ########################
     #PLACEHOLDER FOR TESTING
-    cur_plyr=5600 #BEN simmons
-    new_plyr=3930 #cp3
+    cur_plyr=6404 #halliburton
+    new_plyr=5835 #allen
 #    # get player swap from user
 #    cur_plyr = int(input("please enter 4-digit player id who you would like to drop: \n"))
 #    # check input length
@@ -371,17 +404,20 @@ def main():
     
     # summarize current matchup results
     mr_team, opp_team, results = load_matchup_result(my_league,mr)
-    print(results)
-    print("printing current matchup results: ")
-    plot_results(results)
-    print_results(results)
     
     # summarize new matchup results
     mr_new = what_if_player_swap(my_league,mr,dr,gl,cur_plyr,new_plyr)
     mr_team_new, opp_team_new, results_new = load_matchup_result(my_league,mr_new)
+    
+    # output to user
+    print("printing current matchup results: ")
+    plot_results(results)
+    print_results(results)
+    
     print("printing new matchup results: ")
     plot_results(results_new)
     print_results(results_new)
+    
     return
 
 # if this script is executed (double clicked or called in cmd)
