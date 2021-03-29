@@ -48,15 +48,11 @@ def load_matchup_result(yahoo_league: YahooNBAF, matchup_results: pd.DataFrame()
     col_names = ['week','team_name','opponent_name','FG%','FT%','3PTM','PTS','REB','AST','ST','BLK','TO']
 
     # get team output
-    mr_team = matchup_results[matchup_results['team_name'] == team_name]
-#    mr_team = matchup_results[matchup_results['team_id'] == "402.l.42709.t.7"]
-    
+    mr_team = matchup_results[matchup_results['team_name'] == team_name]    
     mr_team = mr_team[col_names]
     
     # get opponents output
     opp_team = matchup_results[matchup_results['opponent_name'] == team_name]
-#    opp_team = matchup_results[matchup_results['opponent_id'] == "402.l.42709.t.7"]
-
     opp_team = opp_team[col_names]
 
     results = pd.DataFrame(columns=['week','team_name','opponent_name', 'DIFF_FG%','DIFF_FT%', 'DIFF_3PTM', 'DIFF_PTS', 'DIFF_REB', 'DIFF_AST', 'DIFF_ST', 'DIFF_BLK', 'DIFF_TO'])
@@ -381,22 +377,18 @@ def what_if_player_swap(my_league,mr,dr,gl,cur_plyr,new_plyr):
 
 def main():
     mr, dr, gl = load_data_files()
-    
-    ########################
-    #PLACEHOLDER FOR TESTING
-    cur_plyr=6404 #halliburton
-    new_plyr=5835 #allen
-#    # get player swap from user
-#    cur_plyr = int(input("please enter 4-digit player id who you would like to drop: \n"))
-#    # check input length
-#    if not(999<cur_plyr<10000):
-#        print("player id must be 4 digits in length")
-#        sys.exit()
-#    new_plyr = int(input("please enter 4-digit player id who you would like to replace with the dropped player: \n"))
-#    # check input length
-#    if not(999<new_plyr<10000):
-#        print("player id must be 4 digits in length")
-#        sys.exit()
+       
+    # get player swap from user
+    cur_plyr = int(input("please enter 4-digit player id who you would like to drop: \n"))
+    # check input length
+    if not(999<cur_plyr<10000):
+        print("player id must be 4 digits in length")
+        sys.exit()
+    new_plyr = int(input("please enter 4-digit player id who you would like to replace with the dropped player: \n"))
+    # check input length
+    if not(999<new_plyr<10000):
+        print("player id must be 4 digits in length")
+        sys.exit()
     ########################
     
     # create fantasy object to get team details.
