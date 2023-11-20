@@ -4,6 +4,7 @@
 
 # imports core python libraries
 import os
+import subprocess
 import sys
 import json
 
@@ -41,8 +42,8 @@ import pdb
 
 
 class BoxPlotViz: 
-	def __init__(self): 
-		self.data = pd.read_csv('../data/fantasy_results/player_stats_season_2020.csv')	
+	def __init__(self, year): 
+		self.data = pd.read_csv(f'../data/fantasy_results/player_stats_season_{year}.csv')
 		teams = self.data['ownership'].unique().tolist()
 		self.team_list = []
 		for entry in teams: 
@@ -56,13 +57,13 @@ class BoxPlotViz:
 		# Takes in the name of your team and your weekly opponent
 		self.my_team = input("Please enter in your team name: ") 
 		while self.my_team not in self.team_list: 
-			self.my_team = input("We think you've made a typo, please enter in your team name exactly as is on Yahoo NBA Fantasy: ")
+			self.my_team = input(f"We think you've made a typo, team must be one of {self.team_list}: ")
 			if self.my_team in self.team_list: 
 				break 	
 
 		self.opp_team = input("Please enter your opponent's team name: ")
 		while self.opp_team not in self.team_list: 
-			self.opp_team = input("We think you've made a typo, please enter in your team name exactly as is on Yahoo NBA Fantasy: ")
+			self.opp_team = input(f"We think you've made a typo, team must be one of {self.team_list}: ")
 			if self.opp_team in self.team_list: 
 				break
 
@@ -166,13 +167,18 @@ class BoxPlotViz:
 
 		return dataset
 
-
+def userInputSeasonYear():
+    season_year = input("Enter the season year (4 digits): ")
+    while len(season_year) != 4 or not season_year.isdigit():
+        season_year = input("Invalid input. Please enter a 4-digit year.")
+    return season_year
 # -----------------------------------------------------------------------------------------------------------------------------------------------#
 
 # TO DO: 
 # put all function calls in a contained class 
 def main():
-	bot = BoxPlotViz()
+	SEASON_YEAR = userInputSeasonYear()
+	bot = BoxPlotViz(year=SEASON_YEAR)
 	my_team_data = bot.getTeamStats(bot.my_team)
 	opp_team_data = bot.getTeamStats(bot.opp_team)
 
