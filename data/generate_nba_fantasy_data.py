@@ -261,13 +261,15 @@ class YahooNBAF:
         return df
 
     # helper functions    
-    def createStaticStatsLUT(self):
+    def createStaticStatsLUT(self, keysAsInt = False):
         """
         static stat id to stat for raw player stats.
         """
         statsLUT = {'9004003': 'FGM/A', '9007006':'FTM/A', '0': 'GP', '2': 'MIN', '3':'FGA', '4': 'FGM', '5': 'FG%', '6':'FTA', '7':'FTM',
                     '8':'FT%', '9':'3PTA', '10':'3PTM', '11':'3PT%', '12':'PTS', '13': 'OFFREB', '14': 'DEFREB', '15': 'REB', '16':'AST',
                     '17':'ST', '18': 'BLK', '19':'TO', '21':'PF'}
+        if keysAsInt:
+            statsLUT = {int(k): v for k, v in statsLUT.items()}
         return statsLUT
     
     # Creates the json files inside data/team/team_name/team_weekly_stats/weekx 
@@ -733,7 +735,7 @@ class YahooNBAF:
                         info['opponent_id'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['0']['team'][0][0]['team_key']
                         info['opponent_name'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['0']['team'][0][2]['name']
                     team_stats = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][1]['team_stats']['stats']
-                    team_stats = self.formatTeamWeeklyStatsJSON(team_stats, self.createStaticStatsLUT())
+                    team_stats = self.formatTeamWeeklyStatsJSON(team_stats, self.createStaticStatsLUT(keysAsInt=True))
                     #merge dicts
                     results = {**info, **team_stats}
                     #write to csv
