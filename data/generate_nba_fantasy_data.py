@@ -40,7 +40,8 @@ from tqdm import tqdm
 
 # authorization path - see readme for more details.
 AUTH_PATH = '../authorization/authorization_info.json'
-
+STAT_WINDOW = ['season_2023', 'lastweek'] # lastmonth, season_YEAR
+DRAFT_YEAR = 2023 # replaces hardcoded year in func dumpDraftResults
 class YahooNBAF:
     def __init__(self): 
         # get session
@@ -185,19 +186,8 @@ class YahooNBAF:
                 stats[stat_id_map.get(stat['stat']['stat_id'])] = stat['stat']['value']
         
         # calc FGM/A and FTM/A        
-        if(stats['FGA'] == '-' or stats['FGM'] == '-' or stats['FGA'] == '0' or stats['FGM'] =='0'): # 0 attempts or makes
-            stats['FGM/A'] = '0/0'
-        else:
-            FGA = str(stats['FGA'])
-            FGM = str(stats['FGM'])
-            stats['FGM/A'] = FGM + '/' + FGA
-        
-        if(stats['FTA'] == '-' or stats['FTM'] == '-' or stats['FTA'] == '0' or stats['FTM'] =='0'): # 0 attempts or makes
-            stats['FTM/A'] = '0/0'
-        else:
-            FTA = str(stats['FTA'])
-            FTM = str(stats['FTM'])
-            stats['FTM/A'] = FTM + '/' + FTA
+        stats['FGM/A'] = f"{stats['FGM']}/{stats['FGA']}"
+        stats['FTM/A'] = f"{stats['FTM']}/{stats['FTA']}"
             
         return stats
     
@@ -271,13 +261,15 @@ class YahooNBAF:
         return df
 
     # helper functions    
-    def createStaticStatsLUT(self):
+    def createStaticStatsLUT(self, keysAsInt = False):
         """
         static stat id to stat for raw player stats.
         """
         statsLUT = {'9004003': 'FGM/A', '9007006':'FTM/A', '0': 'GP', '2': 'MIN', '3':'FGA', '4': 'FGM', '5': 'FG%', '6':'FTA', '7':'FTM',
                     '8':'FT%', '9':'3PTA', '10':'3PTM', '11':'3PT%', '12':'PTS', '13': 'OFFREB', '14': 'DEFREB', '15': 'REB', '16':'AST',
                     '17':'ST', '18': 'BLK', '19':'TO', '21':'PF'}
+        if keysAsInt:
+            statsLUT = {int(k): v for k, v in statsLUT.items()}
         return statsLUT
     
     # Creates the json files inside data/team/team_name/team_weekly_stats/weekx 
@@ -298,75 +290,22 @@ class YahooNBAF:
         """
         replaces empty stats with zero. convert stats to proper data type.
         """ 
-        if 'GP' in df.columns:
-            df['GP'] = df['GP'].replace('-','0')
-            df['GP'] = df['GP'].astype(int)
-        if 'MIN' in df.columns:
-            df['MIN'] = df['MIN'].replace('-','0')
-            df['MIN'] = df['MIN'].astype(int)
-        if 'FGA' in df.columns:
-            df['FGA'] = df['FGA'].replace('-','0')
-            df['FGA'] = df['FGA'].astype(int)
-        if 'FGM' in df.columns:    
-            df['FGM'] = df['FGM'].replace('-','0')
-            df['FGM'] = df['FGM'].astype(int)
-        if 'FTA' in df.columns:  
-            df['FTA'] = df['FTA'].replace('-','0')
-            df['FTA'] = df['FTA'].astype(int)
-        if 'FTM' in df.columns:  
-            df['FTM'] = df['FTM'].replace('-','0')
-            df['FTM'] = df['FTM'].astype(int)
-        if '3PTA' in df.columns:  
-            df['3PTA'] = df['3PTA'].replace('-','0')
-            df['3PTA'] = df['3PTA'].astype(int)
-        if '3PTM' in df.columns:  
-            df['3PTM'] = df['3PTM'].replace('-','0')
-            df['3PTM'] = df['3PTM'].astype(int)
-        if 'OFFREB' in df.columns:  
-            df['OFFREB'] = df['OFFREB'].replace('-','0')
-            df['OFFREB'] = df['OFFREB'].astype(int)
-        if 'DEFREB' in df.columns:  
-            df['DEFREB'] = df['DEFREB'].replace('-','0')
-            df['DEFREB'] = df['DEFREB'].astype(int)
-        if 'PF' in df.columns:  
-            df['PF'] = df['PF'].replace('-','0')
-            df['PF'] = df['PF'].astype(int)
-        if 'FGM/A' in df.columns:  
-            df['FGM/A'] = df['FGM/A'].replace('-/-', '0/0')
-            df['FGM/A'] = df['FGM/A'].astype(str)
-        if 'FG%' in df.columns:  
-            df['FG%'] = df['FG%'].replace('-', '0')
-            df['FG%'] = df['FG%'].astype(float)
-        if 'FTM/A' in df.columns:  
-            df['FTM/A'] = df['FTM/A'].replace('-/-', '0/0')
-            df['FTM/A'] = df['FTM/A'].astype(str)
-        if 'FT%' in df.columns:  
-            df['FT%'] = df['FT%'].replace('-', '0')
-            df['FT%'] = df['FT%'].astype(float)
-        if '3PT%' in df.columns:  
-            df['3PT%'] = df['3PT%'].replace('-', '0')
-            df['3PT%'] = df['3PT%'].astype(float)
-        if '3PTM' in df.columns:  
-            df['3PTM'] = df['3PTM'].replace('-', '0')
-            df['3PTM'] = df['3PTM'].astype(int)
-        if 'PTS' in df.columns:  
-            df['PTS'] = df['PTS'].replace('-', '0')
-            df['PTS'] = df['PTS'].astype(int)
-        if 'REB' in df.columns:  
-            df['REB'] = df['REB'].replace('-', '0')
-            df['REB'] = df['REB'].astype(int)
-        if 'AST' in df.columns:  
-            df['AST'] = df['AST'].replace('-', '0')
-            df['AST'] = df['AST'].astype(int)
-        if 'ST' in df.columns:  
-            df['ST'] = df['ST'].replace('-', '0')
-            df['ST'] = df['ST'].astype(int)
-        if 'BLK' in df.columns:  
-            df['BLK'] = df['BLK'].replace('-', '0')
-            df['BLK'] = df['BLK'].astype(int)
-        if 'TO' in df.columns:  
-            df['TO'] = df['TO'].replace('-', '0')
-            df['TO'] = df['TO'].astype(int)
+        columns_by_type = {
+            'int_columns': ['GP', 'MIN', 'FGA', 'FGM', 'FTA', 'FTM', '3PTA', '3PTM', 'OFFREB', 'DEFREB', 'PF', 'AST', 'ST', 'BLK', 'TO', 'PTS', 'REB'],
+            'float_columns': ['FG%', 'FT%', '3PT%'],
+            'str_columns': ['FGM/A', 'FTM/A']
+        }
+        
+        for group, columns in columns_by_type.items():
+            for column in columns:
+                if column in df.columns:
+                    if group == 'int_columns':
+                        df[column] = df[column].replace('-', '0').astype(int)
+                    elif group == 'float_columns':
+                        df[column] = df[column].replace('-', '0').astype(float)
+                    elif group == 'str_columns':
+                        df[column] = df[column].replace('-/-', '0/0').astype(str)
+        
         return df
     
     # file dump functions
@@ -401,7 +340,7 @@ class YahooNBAF:
             
             plyr_details = self.__league.player_details(dp['player_id'])
             
-            plyr = self.__league.yhandler.get_player_stats_raw(game_code, [dp['player_id']],'season', date = None, season = 2020)
+            plyr = self.__league.yhandler.get_player_stats_raw(game_code, [dp['player_id']],'season', date = None, week = None, season = DRAFT_YEAR)
             plyr = plyr['fantasy_content']['players']['0']['player'][1]['player_stats']['stats']
 
             # get draft info
@@ -440,7 +379,7 @@ class YahooNBAF:
     
     # TODO: dump season 2019 and season 2020 using basketball reference to save runtime
     # Only lastweek and lastmonth stats should rely on Yahoo API calls
-    def dumpPlayerStats(self, stat_type):
+    def dumpPlayerStats(self, stat_window):
         """
         Get all player stats for a given season / last month or lat week. Note if a player is not active for the 2020 season, they will not appear in prior seasons.
         """
@@ -463,7 +402,7 @@ class YahooNBAF:
 
         # create dataframe
         stat_columns = self.getAllStats()
-        cols = ['player_id', 'stat_type', 'name','percent_owned','status', 'ownership'] + stat_columns 
+        cols = ['player_id', 'stat_window', 'name','percent_owned','status', 'ownership'] + stat_columns 
         output = pd.DataFrame(columns=cols) 
         
         total_count = 0
@@ -474,23 +413,18 @@ class YahooNBAF:
             #print('player %d out of %d ' %(total_count, len(all_players)))
             basic_info = {}
             basic_info['player_id'] = plyr['player_id']
-            basic_info['stat_type'] = stat_type
+            basic_info['stat_window'] = stat_window
             basic_info['name'] = plyr['name']
             basic_info['percent_owned'] = plyr['percent_owned']
             basic_info['status'] = plyr['status']
             basic_info['ownership'] = taken_players_with_owners.get(str(plyr['player_id']),'0')
 
-            if(stat_type == 'season_2020'):
-                season = 2020 
-                plyr_raw_stats = self.__league.yhandler.get_player_stats_raw(game_code, [plyr['player_id']],'season', date = None, season = season)
-                plyr_raw_stats = plyr_raw_stats['fantasy_content']['players']['0']['player'][1]['player_stats']['stats']
-            elif(stat_type =='season_2019'):
-                season = 2019
-                plyr_raw_stats = self.__league.yhandler.get_player_stats_raw(game_code, [plyr['player_id']],'season', date = None, season = season)
-                plyr_raw_stats = plyr_raw_stats['fantasy_content']['players']['0']['player'][1]['player_stats']['stats']                
-            else:    
-                plyr_raw_stats = self.__league.yhandler.get_player_stats_raw(game_code, [plyr['player_id']],stat_type, date = None, season = None)
-                plyr_raw_stats = plyr_raw_stats['fantasy_content']['players']['0']['player'][1]['player_stats']['stats']
+            if stat_window.startswith('season_'):
+                season = int(stat_window.split('_')[1])
+                plyr_raw_stats = self.__league.yhandler.get_player_stats_raw(game_code, [plyr['player_id']], 'season', date = None, week = None, season = season)
+            else:
+                plyr_raw_stats = self.__league.yhandler.get_player_stats_raw(game_code, [plyr['player_id']], stat_window, date = None, week = None, season = None)
+            plyr_raw_stats = plyr_raw_stats['fantasy_content']['players']['0']['player'][1]['player_stats']['stats']
 
             plyr_stats = self.getPlayerDetails(plyr_raw_stats, stat_map)
             
@@ -509,7 +443,7 @@ class YahooNBAF:
         
         # export to .csv
         timestr = time.strftime("%Y%m%d")
-        outname = 'player_stats_' + stat_type + '_' + timestr + '.csv'
+        outname = 'player_stats_' + stat_window + '_' + timestr + '.csv'
         outdir = './fantasy_results/'
         if not os.path.exists(outdir):
             os.mkdir(outdir)
@@ -801,7 +735,7 @@ class YahooNBAF:
                         info['opponent_id'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['0']['team'][0][0]['team_key']
                         info['opponent_name'] = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams']['0']['team'][0][2]['name']
                     team_stats = stats['fantasy_content']['league'][1]['scoreboard']['0']['matchups'][str(matchup)]['matchup']['0']['teams'][str(team)]['team'][1]['team_stats']['stats']
-                    team_stats = self.formatTeamWeeklyStatsJSON(team_stats, self.createStaticStatsLUT())
+                    team_stats = self.formatTeamWeeklyStatsJSON(team_stats, self.createStaticStatsLUT(keysAsInt=True))
                     #merge dicts
                     results = {**info, **team_stats}
                     #write to csv
@@ -843,37 +777,46 @@ def updateFantasyLeague():
     # generate files for data vis / analytics
     #########################################
     # player stats
-    stat_types = ['season_2020','season_2019', 'lastweek', 'lastmonth']  
     timestr = time.strftime("%Y%m%d")
-    for stat_type in stat_types:
-        outname = 'player_stats_' + stat_type + '_' + timestr + '.csv'
+    for stat_window in STAT_WINDOW:
+        outname = 'player_stats_' + stat_window + '_' + timestr + '.csv'
         if not os.path.exists(outname):
-            print("generating player stats for: ", stat_type)
-            my_league.dumpPlayerStats(stat_type)
+            userGenDataChoice = input("generate player stats for: " + stat_window + "? (y/n)").lower() in ('yes','y')
+            if userGenDataChoice:
+                print("generating player stats for: ", stat_window)
+                my_league.dumpPlayerStats(stat_window)
     
     # player daily stats: using BeautifulSoup and BasketballReference.com simply because yahoo api sucks and has major query clogs.
     outname = 'player_stats_daily_season_' + timestr + '.csv'
     if not os.path.exists(outname):
-        print("generating game log for each player this season")    
-        my_league.dumpDailyPlayerStats()
+        userGenDataChoice = input("generate game log for each player this season? (y/n)").lower() in ('yes','y')
+        if userGenDataChoice:
+            print("generating game log for each player this season")
+            my_league.dumpDailyPlayerStats()
 
     # draft results
     outname = 'draft_results_' + timestr + '.csv'
     if not os.path.exists(outname):
-        print("generating draft results")
-        my_league.dumpDraftResults()
+        userGenDataChoice = input("generate draft results? (y/n)").lower() in ('yes','y')
+        if userGenDataChoice:
+            print("generating draft results")
+            my_league.dumpDraftResults()
     
     # matchup results 
     outname = 'league_matchup_results_' + timestr + '.csv'
     if not os.path.exists(outname):
-        print("generating matchup results")
-        my_league.dumpMatchupResults()
+        userGenDataChoice = input("generate matchup results? (y/n)").lower() in ('yes','y')
+        if userGenDataChoice:
+            print("generating matchup results")
+            my_league.dumpMatchupResults()
     
     # daily rosters    
     outname = 'league_daily_rosters_' + timestr + '.csv'
     if not os.path.exists(outname):
-        print("generating daily rosters")
-        my_league.dumpDailyRosters()
+        userGenDataChoice = input("generate daily rosters? (y/n)").lower() in ('yes','y')
+        if userGenDataChoice:  
+            print("generating daily rosters")
+            my_league.dumpDailyRosters()
     
     #done
     print("All done, trust the statistics!")
